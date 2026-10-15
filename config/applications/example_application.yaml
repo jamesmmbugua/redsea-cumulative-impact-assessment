@@ -1,0 +1,12 @@
+# Example project file for `rscia screen --project config/applications/example_application.yaml`
+# Copy this file for each permit application. Source files use the same attribute names
+# as the baseline sources (see config/pressures.yaml, weight_field).
+id: APP-2026-000
+name: Example coastal desalination plant
+applicant: Example applicant
+changes:
+  - {pressure: desal_brine, mode: add_sources, file: data/applications/APP-2026-000/desal_plant.gpkg}
+  - {pressure: chemical_discharge, mode: add_sources, file: data/applications/APP-2026-000/desal_plant.gpkg}
+  - {pressure: thermal_discharge, mode: add_sources, file: data/applications/APP-2026-000/outfall.gpkg}
+  - {pressure: dredging_sediment, mode: add_sources, file: data/applications/APP-2026-000/construction.gpkg}
+  - {pressure: light_pollution, mode: add_raster, file: data/applications/APP-2026-000/lighting.tif}

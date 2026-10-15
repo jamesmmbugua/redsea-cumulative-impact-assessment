@@ -8,11 +8,10 @@ grid:
   crs: "+proj=aea +lat_0=22 +lon_0=39 +lat_1=18.5 +lat_2=27.5 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs"
   resolution_m: 1000
   eez_file: data/raw/boundaries/eez_v12.gpkg
-  # Filter applied to the EEZ file to select the Saudi Red Sea part.
-  # Check field names and values in the downloaded file.
-  eez_filter:
-    field: GEONAME
-    values: ["Saudi Arabian Exclusive Economic Zone (Red Sea)"]
+  # scripts/download_eez.py writes the Saudi Red Sea part only, so no filter is needed.
+  # If you use another EEZ file, select the Saudi Red Sea feature here, e.g.
+  # eez_filter: {field: GEONAME, values: ["..."]}
+  eez_filter: null
   # Optional: polygon to keep only the Red Sea side (used if the EEZ file has one Saudi polygon)
   clip_file: null
   coastline_file: data/raw/boundaries/land_polygons.gpkg
@@ -40,3 +39,6 @@ model:
   sensitivity_matrix: config/sensitivity_matrix.csv
   sensitivity_confidence: config/sensitivity_confidence.csv
   hotspot_percentile: 90
+  # Components reported first in screening reports (coral, turtle and related mandates)
+  focal_components: [coral_shallow, coral_mesophotic, seagrass, mangrove, turtle_nesting,
+                     green_turtle, hawksbill_turtle, dugong]

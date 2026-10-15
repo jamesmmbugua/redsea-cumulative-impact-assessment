@@ -1,7 +1,11 @@
 # Red Sea Cumulative Impact Assessment (RS-CIA)
 
-A cumulative impact assessment tool for the Saudi Arabian Red Sea EEZ, modelled on the
-Symphony approach used in Swedish marine spatial planning.
+A cumulative impact assessment tool for the Saudi Arabian Red Sea EEZ, modelled on Symphony
+(Swedish marine spatial planning) and WIO Symphony (Nairobi Convention, Western Indian Ocean).
+It supports coral reef conservation, turtle conservation and the review of development permits
+and EIAs.
+
+Lead: James Mbugua. Full method: see the methods document (`docs/methods.md`).
 
 It answers two questions:
 
@@ -69,7 +73,24 @@ rscia run --scenario S0_baseline
 rscia run-all               # every scenario in config/scenarios.yaml
 rscia compare --scenario S1_development   # difference map against baseline
 rscia validate --scenario S0_baseline     # compare impact with coral survey condition
+rscia screen --project config/applications/example_application.yaml   # screen a permit application
 ```
+
+## Loading data
+
+```bash
+python scripts/download_eez.py                         # Saudi Red Sea EEZ from Marine Regions
+python scripts/import_bio_oracle.py path/to/bio_oracle  # Bio-ORACLE v3 NetCDF to model GeoTIFFs
+python scripts/import_coral_surveys.py surveys.xlsx --map site=Site lat=Lat lon=Lon coral=HC
+```
+
+## Screening development applications
+
+Each permit application gets a project file (copy `config/applications/example_application.yaml`)
+listing the pressures it adds. `rscia screen` runs it on top of the baseline and writes
+`outputs/screening/<id>/screening_report.md`: zone of influence, added impact, existing load,
+coral, seagrass, mangrove, turtle and dugong areas affected, and survey sites in the zone.
+Screen alternative designs as separate project files and compare the reports.
 
 ## Adding a planned project to the development scenario
 

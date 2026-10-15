@@ -88,6 +88,14 @@ def cmd_maps(args):
     quicklook_maps(cfg, load_grid(cfg), [r.run_id for r in expand_runs(cfg)])
 
 
+def cmd_screen(args):
+    from .pipeline import load_grid
+    from .screening import screen
+    cfg = _cfg(args)
+    for f in args.project:
+        print(f"Report: {screen(cfg, load_grid(cfg), Path(f), args.baseline)}")
+
+
 def cmd_demo(args):
     from . import demo
     from .pipeline import expand_runs, make_grid, prepare_pressures, run_scenario
@@ -111,6 +119,9 @@ def cmd_demo(args):
     tab.to_csv(cfg.outputs_dir / "comparisons" / "all_runs_summary.csv", index=False)
     print(tab[["run", "total_baseline", "total_scenario", "change_pct"]].to_string(index=False))
     quicklook_maps(cfg, grid, [r.run_id for r in runs])
+    from .screening import screen
+    rep = screen(cfg, grid, demo.build_demo_application(cfg))
+    print(f"Screening report: {rep}")
     print(f"\nDemo finished. Outputs in {cfg.outputs_dir}")
 
 
@@ -134,6 +145,10 @@ def main(argv=None):
     p = sub.add_parser("validate", help="validate a run against coral survey sites")
     p.add_argument("--scenario", default="S0_baseline")
     p.set_defaults(fn=cmd_validate)
+    p = sub.add_parser("screen", help="screen development application(s) against the baseline")
+    p.add_argument("--project", nargs="+", required=True, help="project YAML file(s)")
+    p.add_argument("--baseline", default="S0_baseline")
+    p.set_defaults(fn=cmd_screen)
     sub.add_parser("maps", help="quick-look PNG maps of all runs").set_defaults(fn=cmd_maps)
     p = sub.add_parser("demo", help="run the full pipeline on synthetic data")
     p.add_argument("--out", default="demo_run")

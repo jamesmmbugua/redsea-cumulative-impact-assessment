@@ -224,3 +224,23 @@ def build_demo_surveys(cfg, grid, seed: int = 3) -> None:
     f = cfg.path(cfg.project["paths"]["surveys_file"])
     f.parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(f, index=False)
+
+
+def build_demo_application(cfg) -> Path:
+    """A synthetic permit application: one desalination plant plus a small resort."""
+    rng = np.random.default_rng(11)
+    d = cfg.root / "data" / "applications" / "DEMO-APP-001"
+    d.mkdir(parents=True, exist_ok=True)
+    _coastal_points(rng, 1, capacity_m3_day=(400_000, 400_001)).to_file(d / "desal_plant.gpkg")
+    _coastal_points(rng, 1, visitors_year=(60_000, 60_001)).to_file(d / "resort.gpkg")
+    proj = {
+        "id": "DEMO-APP-001", "name": "Synthetic desalination plant and resort", "applicant": "Demo applicant",
+        "changes": [
+            {"pressure": "desal_brine", "mode": "add_sources", "file": "data/applications/DEMO-APP-001/desal_plant.gpkg"},
+            {"pressure": "chemical_discharge", "mode": "add_sources", "file": "data/applications/DEMO-APP-001/desal_plant.gpkg"},
+            {"pressure": "tourism_diving", "mode": "add_sources", "file": "data/applications/DEMO-APP-001/resort.gpkg"},
+        ],
+    }
+    f = d / "project.yaml"
+    f.write_text(yaml.safe_dump(proj, sort_keys=False))
+    return f
