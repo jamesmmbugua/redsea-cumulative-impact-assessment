@@ -5,6 +5,7 @@ A cumulative impact assessment tool for the Saudi Arabian Red Sea EEZ, modelled 
 It supports coral reef conservation, turtle conservation and the review of development permits
 and EIAs.
 
+Developed by the General Authority for Conservation of Corals and Sea Turtles in the Red Sea.
 Lead: James Mbugua. Full method: see the methods document (`docs/methods.md`).
 
 It answers two questions:
