@@ -20,7 +20,7 @@ Two uses:
 |---|---|
 | Area | Saudi Arabian EEZ in the Red Sea, including the Saudi side of the Gulf of Aqaba. The Arabian Gulf EEZ is excluded. |
 | Boundary source | Marine Regions (VLIZ) EEZ dataset. Some boundaries are not formally delimited; treat as indicative. |
-| Coastal strip | 2 km landward buffer so mangroves, sabkha and nesting beaches are included. |
+| Coastal strip | 2 km landward buffer so mangroves, intertidal flats and nesting beaches are included. |
 | Resolution | 1 km x 1 km |
 | Projection | Albers Equal Area centred on the Saudi Red Sea (lat_0 22, lon_0 39, standard parallels 18.5 and 27.5). Equal-area cells keep impacts comparable along the whole coast. |
 
@@ -34,7 +34,7 @@ Each component is a 0 to 1 raster of presence (habitats) or relative importance 
 | coral_mesophotic | Mesophotic coral (30 to 150 m) | Benthic |
 | seagrass | Seagrass beds | Benthic |
 | mangrove | Mangroves | Benthic |
-| intertidal_sabkha | Intertidal flats and sabkha | Benthic |
+| intertidal_flats | Intertidal flats | Benthic |
 | soft_sediment | Subtidal soft sediment | Benthic |
 | hard_substrate | Non-reef hard substrate | Benthic |
 | deep_sea | Deep-sea habitats (below 200 m) | Benthic |

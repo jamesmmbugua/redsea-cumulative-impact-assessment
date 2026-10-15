@@ -172,7 +172,7 @@ def build_demo_components(cfg, grid, seed: int = 7) -> None:
         "coral_mesophotic": band(5, 25) * patches(3, 0.6),
         "seagrass": band(0, 6) * patches(2, 0.5),
         "mangrove": band(-1.5, 1) * patches(1.5, 0.6),
-        "intertidal_sabkha": band(-2, 0.5) * patches(2, 0.4),
+        "intertidal_flats": band(-2, 0.5) * patches(2, 0.4),
         "soft_sediment": band(0, 30) * patches(4, 0.3),
         "hard_substrate": band(0, 30) * patches(3, 0.7),
         "deep_sea": (dist_km > 25).astype(float),

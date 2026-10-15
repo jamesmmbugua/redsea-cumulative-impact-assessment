@@ -36,8 +36,8 @@ components:
     source: Global Mangrove Watch
     data_confidence: 3
 
-  - id: intertidal_sabkha
-    name: Intertidal flats and sabkha
+  - id: intertidal_flats
+    name: Intertidal flats
     group: benthic
     method: presence
     source: Global tidal flats (Murray et al.), imagery

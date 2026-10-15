@@ -1,4 +1,4 @@
-pressure,coral_shallow,coral_mesophotic,seagrass,mangrove,intertidal_sabkha,soft_sediment,hard_substrate,deep_sea,dugong,green_turtle,hawksbill_turtle,turtle_nesting,whale_shark,manta_mobula,dolphins,other_cetaceans,seabird_breeding,seabird_foraging,reef_fish,spawning_aggregations,pelagic_productive
+pressure,coral_shallow,coral_mesophotic,seagrass,mangrove,intertidal_flats,soft_sediment,hard_substrate,deep_sea,dugong,green_turtle,hawksbill_turtle,turtle_nesting,whale_shark,manta_mobula,dolphins,other_cetaceans,seabird_breeding,seabird_foraging,reef_fish,spawning_aggregations,pelagic_productive
 desal_brine,0.7,0.5,0.8,0.3,0.2,0.5,0.4,0.1,0.2,0.2,0.2,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.4,0.5,0.2
 thermal_discharge,0.8,0.4,0.6,0.3,0.2,0.3,0.3,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.4,0.4,0.2
 chemical_discharge,0.7,0.5,0.6,0.4,0.3,0.4,0.3,0.0,0.2,0.2,0.2,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.4,0.4,0.3

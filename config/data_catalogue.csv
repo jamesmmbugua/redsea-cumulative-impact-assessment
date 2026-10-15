@@ -6,7 +6,7 @@ coral_shallow,component,Shallow coral reef (0 to 30 m),"Allen Coral Atlas (coral
 coral_mesophotic,component,Mesophotic coral (30 to 150 m),"Habitat model from bathymetry, light at bottom, temperature (Bio-ORACLE)",,,,,to_obtain,1,
 seagrass,component,Seagrass beds,"Allen Coral Atlas seagrass class, UNEP-WCMC, national surveys",,,,,to_obtain,1,
 mangrove,component,Mangroves,Global Mangrove Watch,,,,,to_obtain,3,
-intertidal_sabkha,component,Intertidal flats and sabkha,"Global tidal flats (Murray et al.), imagery",,,,,to_obtain,2,
+intertidal_flats,component,Intertidal flats,"Global tidal flats (Murray et al.), imagery",,,,,to_obtain,2,
 soft_sediment,component,Subtidal soft sediment,"Allen Coral Atlas sand/rubble classes, bathymetry",,,,,to_obtain,1,
 hard_substrate,component,Non-reef hard substrate,Allen Coral Atlas rock class,,,,,to_obtain,1,
 deep_sea,component,Deep-sea habitats (below 200 m),GEBCO depth mask,,,,,to_obtain,2,
