@@ -120,6 +120,24 @@ def screen(cfg: Config, grid: Grid, project_file: Path, baseline_id: str = "S0_b
 
     total_base = float(np.nansum(base))
     total_add = float(np.nansum(added[zone]))
+
+    # region(s) of the zone, and the added impact on the 0 to 100 scale
+    from .pipeline import load_regions
+    from .reporting import result_scale
+    reg = load_regions(cfg, grid)
+    rnames = {r["id"]: r["name"] for r in cfg.regions}
+    in_reg = {rnames.get(int(k), "outside regions"): int(n) for k, n in zip(*np.unique(reg[zone], return_counts=True))} if n_zone else {}
+    region_txt = ", ".join(f"{k} ({v} cells)" for k, v in sorted(in_reg.items(), key=lambda x: -x[1])) or "none"
+    scale = result_scale(cfg, run, res, grid)
+    idx_add = 100 * added / scale["impact"] if scale["impact"] else added * np.nan
+    max_idx_add = float(np.nanmax(idx_add[zone])) if n_zone else 0.0
+    rar_txt = ""
+    rb = base_dir / "impact_rarity_adjusted.tif"
+    if res.rarity_adjusted is not None and rb.exists():
+        radd = res.rarity_adjusted - grid.read(rb, "nearest")
+        rbase = float(np.nansum(grid.read(rb, "nearest")[zone]))
+        rar_txt = (f"- Rarity-adjusted added impact: {np.nansum(radd[zone]):,.2f}"
+                   + (f" ({100 * np.nansum(radd[zone]) / rbase:.1f}% of the rarity-adjusted baseline in the zone)." if rbase > 0 else "."))
     L = [f"# Screening report: {proj.get('name', proj['id'])}", "",
          f"Application: {proj['id']}" + (f" | Applicant: {proj['applicant']}" if proj.get("applicant") else ""),
          f"Date: {date.today().isoformat()} | Baseline: {baseline_id} | Model version: RS-CIA",
@@ -127,9 +145,12 @@ def screen(cfg: Config, grid: Grid, project_file: Path, baseline_id: str = "S0_b
          f"- Zone of influence: {n_zone} cells ({n_zone * km2:,.0f} km2) where the project raises impact.",
          f"- Added impact: {total_add:,.2f}, equal to {100 * total_add / total_base:.3f}% of the EEZ baseline total"
          + (f" and {100 * total_add / np.nansum(base[zone]):.1f}% of the baseline within the zone." if n_zone and np.nansum(base[zone]) > 0 else "."),
+         f"- Region: {region_txt}.",
+         f"- Largest increase in any one cell: {max_idx_add:.1f} points on the 0 to 100 impact scale "
+         f"(100 = the {scale['percentile']}th percentile of baseline impact).",
          f"- Existing load: mean baseline impact in the zone is higher than in {pct_rank:.0f}% of EEZ cells; "
          f"{hot_cells} zone cells are already baseline hotspots (top 10%).",
-         f"- {sites_txt}", "", "## Added impact by pressure", "", "| Pressure | Added impact |", "|---|---|"]
+         f"- {sites_txt}"] + ([rar_txt] if rar_txt else []) + ["", "## Added impact by pressure", "", "| Pressure | Added impact |", "|---|---|"]
     for _, r in by_p.iterrows():
         L.append(f"| {cfg.pressure(r.pressure)['name']} | {r.added_impact:,.2f} |")
     L += ["", "## Ecosystem components in the zone", "",

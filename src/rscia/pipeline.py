@@ -13,7 +13,7 @@ import pandas as pd
 from . import layers
 from .config import Config
 from .grid import Grid, build_grid, save_template
-from .model import ImpactResult, cumulative_impact
+from .model import ImpactResult, commonness, cumulative_impact
 
 log = logging.getLogger("rscia")
 
@@ -33,7 +33,58 @@ def make_grid(cfg: Config) -> Grid:
     grid = build_grid(eez, g["crs"], g["resolution_m"], land, g.get("coastal_buffer_m", 0), clip)
     save_template(grid, cfg.path(g["template_raster"]))
     log.info("Grid %d x %d, %d cells in study area", grid.width, grid.height, int(grid.mask.sum()))
+    make_regions(cfg, grid)
     return grid
+
+
+def make_regions(cfg: Config, grid: Grid) -> np.ndarray:
+    """Rasterize the assessment regions (Northern, Central, Southern) to the grid.
+
+    Each cell gets the id of the region covering its centre; 0 where no region applies.
+    """
+    from rasterio.features import rasterize
+
+    rcfg = cfg.project.get("regions") or {}
+    out = np.zeros(grid.shape, dtype="float32")
+    f = cfg.path(rcfg.get("file"))
+    if f is None or not f.exists():
+        log.warning("No regions file (%s); the default sensitivity matrix is used everywhere", f)
+    else:
+        gdf = gpd.read_file(f).to_crs(grid.crs)
+        code_to_id = {r["code"]: int(r["id"]) for r in cfg.regions}
+        field = rcfg.get("field", "region")
+        shapes = []
+        for geom, code in zip(gdf.geometry, gdf[field]):
+            if code not in code_to_id:
+                raise ValueError(f"Region '{code}' in {f} is not listed in project.yaml regions")
+            shapes.append((geom, code_to_id[code]))
+        out = rasterize(shapes, out_shape=grid.shape, transform=grid.transform, fill=0,
+                        dtype="int16").astype("float32")
+        # Study cells not covered (e.g. the landward coastal strip, since MEOW stops at the
+        # coast) take the region of the nearest covered cell.
+        gaps = grid.mask & (out == 0)
+        if gaps.any() and (out > 0).any():
+            from scipy import ndimage
+            _, (ri, ci) = ndimage.distance_transform_edt(out == 0, return_indices=True)
+            out[gaps] = out[ri[gaps], ci[gaps]]
+        for r in cfg.regions:
+            log.info("Region %s: %d cells", r["name"], int(((out == r["id"]) & grid.mask).sum()))
+        if ((out == 0) & grid.mask).any():
+            log.warning("%d study cells fall outside all regions and use the default matrix",
+                        int(((out == 0) & grid.mask).sum()))
+    out[~grid.mask] = np.nan
+    if rcfg.get("raster"):
+        grid.write(cfg.path(rcfg["raster"]), out)
+    return out
+
+
+def load_regions(cfg: Config, grid: Grid) -> np.ndarray:
+    rcfg = cfg.project.get("regions") or {}
+    f = cfg.path(rcfg.get("raster"))
+    if f is not None and f.exists():
+        r = grid.read(f, resampling="nearest", fill=0)
+        return np.nan_to_num(r).astype("int16")
+    return np.nan_to_num(make_regions(cfg, grid)).astype("int16")
 
 
 def load_grid(cfg: Config) -> Grid:
@@ -283,9 +334,12 @@ def run_scenario(cfg: Config, run: RunSpec, grid: Grid | None = None) -> ImpactR
     E = load_components(cfg, grid, missing)
     P = scenario_pressures(cfg, grid, run, missing)
     res = cumulative_impact(
-        P, E, cfg.sensitivity, grid.mask, cfg.sensitivity_confidence,
+        P, E, cfg.regional, grid.mask,
         pressure_confidence={p["id"]: p.get("data_confidence", 2) for p in cfg.pressures},
         component_confidence={c["id"]: c.get("data_confidence", 2) for c in cfg.components},
+        regions=load_regions(cfg, grid),
+        rarity=commonness(E, grid.mask),
+        rarity_min_share=cfg.project["model"].get("rarity_min_share", 0.0),
     )
     write_run_outputs(cfg, grid, run, res, sorted(set(missing)))
     for m in sorted(set(missing)):

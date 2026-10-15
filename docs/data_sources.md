@@ -11,6 +11,7 @@ Starting list. Record the actual file, date and licence for each layer in
 | Coastline | OpenStreetMap coastline, or GSHHG |
 | Bathymetry | GEBCO global grid |
 | Protected areas | WDPA (Protected Planet), national NCW data |
+| Assessment regions | Marine Ecoregions of the World (MEOW; Spalding et al. 2007), Marine Regions |
 
 ## Ecosystem components
 

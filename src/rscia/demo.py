@@ -90,6 +90,19 @@ def build_demo(root: Path, repo_root: Path, seed: int = 42) -> None:
     land = Polygon(coast + [(LON1 + 0.2, LAT1), (LON1 + 0.2, LAT0)])
     gpd.GeoDataFrame({"name": ["Demo EEZ"]}, geometry=[sea], crs="EPSG:4326").to_file(raw / "boundaries" / "eez_demo.gpkg")
     gpd.GeoDataFrame(geometry=[land], crs="EPSG:4326").to_file(raw / "boundaries" / "land_demo.gpkg")
+    # three synthetic assessment regions (in the real data these come from MEOW)
+    regions = gpd.GeoDataFrame(
+        {"region": ["northern", "central", "southern"], "name": ["Northern Red Sea", "Central Red Sea", "Southern Red Sea"]},
+        geometry=[box(LON0, 21.65, COAST_LON + 0.1, LAT1), box(LON0, 21.3, COAST_LON + 0.1, 21.65),
+                  box(LON0, LAT0, COAST_LON + 0.1, 21.3)], crs="EPSG:4326")
+    regions["geometry"] = regions.geometry.intersection(sea)   # stop at the coast, like MEOW
+    regions.to_file(raw / "boundaries" / "regions.gpkg")
+    # southern matrix differs slightly to exercise the regional matrices
+    sm = pd.read_csv(root / "config" / "sensitivity_matrix.csv", index_col=0)
+    sm.loc["marine_heatwaves", "coral_shallow"] = 0.8
+    sm.to_csv(root / "config" / "sensitivity_matrix_southern.csv")
+    proj["model"]["regional_matrices"]["southern"]["matrix"] = "config/sensitivity_matrix_southern.csv"
+    pfile.write_text(yaml.safe_dump(proj, sort_keys=False))
     bands = [box(LON0, LAT0 + i * 0.25, LON1, LAT0 + (i + 1) * 0.25) for i in range(4)]
     gpd.GeoDataFrame({"name": ["South", "South-central", "North-central", "North"]}, geometry=bands,
                      crs="EPSG:4326").to_file(raw / "boundaries" / "planning_units_demo.gpkg")

@@ -1,5 +1,6 @@
 layer_id,layer_type,name,source,raw_file,date_obtained,licence,owner,status,data_confidence,notes
 eez,boundary,Saudi Red Sea EEZ,Marine Regions (VLIZ),data/raw/boundaries/eez_v12.gpkg,,,,to_obtain,,
+meow,boundary,Marine Ecoregions of the World,Spalding et al. 2007 (Marine Regions),data/raw/boundaries/meow_ecos.shp,,,,to_obtain,,used for Northern/Central/Southern regions
 coastline,boundary,Land polygons,OpenStreetMap,data/raw/boundaries/land_polygons.gpkg,,,,to_obtain,,
 bathymetry,base,Bathymetry,GEBCO,data/raw/base/gebco.tif,,,,to_obtain,,
 coral_shallow,component,Shallow coral reef (0 to 30 m),"Allen Coral Atlas (coral/algae benthic class), checked against survey sites",,,,,to_obtain,2,

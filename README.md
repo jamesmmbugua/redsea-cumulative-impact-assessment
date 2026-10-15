@@ -81,9 +81,25 @@ rscia screen --project config/applications/example_application.yaml   # screen a
 
 ```bash
 python scripts/download_eez.py                         # Saudi Red Sea EEZ from Marine Regions
+python scripts/build_regions.py --split-lat <deg N>    # Northern, Central, Southern regions from MEOW
 python scripts/import_bio_oracle.py path/to/bio_oracle  # Bio-ORACLE v3 NetCDF to model GeoTIFFs
 python scripts/import_coral_surveys.py surveys.xlsx --map site=Site lat=Lat lon=Lon coral=HC
 ```
+
+## Regions, rarity and the 0 to 100 scale
+
+- **Regions.** The EEZ is split into the Northern, Central and Southern Red Sea, based on the
+  MEOW ecoregions (Northern and Central Red Sea split at a set latitude; Southern Red Sea).
+  Each region can have its own sensitivity matrix (`model.regional_matrices` in
+  `config/project.yaml`). Results are summarized per region (`summary_by_region.csv`).
+- **Rarity-adjusted impact.** `impact_rarity_adjusted.tif` divides each component's impact
+  by the share of the EEZ it occupies, so damage to rare habitats (nesting beaches,
+  mangroves, spawning sites) weighs more. Same approach as Symphony.
+- **0 to 100 scale.** `impact_index.tif` expresses impact so that 100 equals the 95th
+  percentile of baseline impact. All scenarios use the baseline's reference, so values
+  above 100 mean impact higher than today's high-impact areas.
+- **Symphony export.** `rscia export-symphony` writes a baseline in the WIO Symphony format
+  (multiband 0 to 100 GeoTIFFs, sensitivity and metadata CSVs).
 
 ## Screening development applications
 
@@ -107,12 +123,14 @@ Screen alternative designs as separate project files and compare the reports.
 | File | Content |
 |---|---|
 | impact_total.tif | Cumulative impact |
+| impact_index.tif | Cumulative impact on the 0 to 100 scale |
+| impact_rarity_adjusted.tif, impact_rarity_adjusted_index.tif | Rarity-adjusted impact, raw and 0 to 100 |
 | impact_by_pressure.tif | One band per pressure (band names set) |
 | impact_by_component.tif | One band per component |
 | confidence.tif | Impact-weighted confidence, 1 low to 3 high |
 | hotspots.tif | Top 10 percent of cells |
 | component_count.tif | Number of components present |
-| summary_by_*.csv | Totals and shares by pressure, component, group, planning unit |
+| summary_by_*.csv | Totals and shares by pressure, component, group, region, planning unit |
 | run_info.json | Run settings and any missing inputs |
 
 Comparisons against the baseline are in `outputs/comparisons/`, quick-look maps in

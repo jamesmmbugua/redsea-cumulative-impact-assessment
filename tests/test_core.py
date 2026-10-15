@@ -109,3 +109,51 @@ def test_demo_pipeline(tmp_path):
     assert (s.loc[s.run == "S1_development", "change_pct"] > 0).all()
     v = pd.read_csv(res / "S0_baseline" / "validation" / "validation_summary.csv")
     assert v.direction_as_expected.all()
+
+
+def test_regional_matrices_apply_per_region():
+    mask = np.ones((1, 2), bool)
+    P = {"a": np.ones((1, 2))}
+    E = {"x": np.ones((1, 2))}
+    s1 = pd.DataFrame({"x": [0.2]}, index=["a"])
+    s2 = pd.DataFrame({"x": [0.9]}, index=["a"])
+    regions = np.array([[1, 2]])
+    r = cumulative_impact(P, E, {0: (s1, None), 1: (s1, None), 2: (s2, None)}, mask, regions=regions)
+    np.testing.assert_allclose(r.total, [[0.2, 0.9]], rtol=1e-6)
+
+
+def test_rarity_adjustment_weights_rare_components():
+    from rscia.model import commonness
+    mask = np.ones((1, 4), bool)
+    E = {"common": np.ones((1, 4)), "rare": np.array([[1.0, 0, 0, 0]])}
+    P = {"a": np.array([[1.0, 0, 0, 0]])}
+    S = pd.DataFrame({"common": [0.5], "rare": [0.5]}, index=["a"])
+    rar = commonness(E, mask)
+    assert rar == {"common": 1.0, "rare": 0.25}
+    r = cumulative_impact(P, E, S, mask, rarity=rar)
+    assert r.total[0, 0] == pytest.approx(1.0)               # 0.5 + 0.5
+    assert r.rarity_adjusted[0, 0] == pytest.approx(2.5)     # 0.5/1 + 0.5/0.25
+
+
+def test_scale_0_100():
+    from rscia.model import scale_0_100
+    np.testing.assert_allclose(scale_0_100(np.array([0.0, 2.0, 6.0]), 4.0), [0, 50, 150])
+
+
+def test_symphony_export_format(tmp_path):
+    import csv, rasterio
+    from rscia.cli import main
+    out = tmp_path / "demo"
+    main(["--root", str(ROOT), "demo", "--out", str(out)])
+    d = out / "outputs" / "symphony_export" / "S0_baseline"
+    with rasterio.open(d / "ecosystem.tif") as s:
+        assert s.count == 21 and s.dtypes[0] == "uint8"
+        assert int(s.read(masked=True).max()) <= 100
+    rows = list(csv.reader(open(d / "sensitivity_northern.csv"), delimiter=";"))
+    assert rows[0][0] == "SENSITIVITY" and len(rows) == 20 and len(rows[0]) == 22
+    meta = list(csv.reader(open(d / "pressure_metadata.csv"), delimiter=";"))
+    assert len(meta[0]) == 43
+    titles = {r[9] for r in meta[1:]}
+    assert titles == {r[0] for r in rows[1:]}   # Title must match matrix row names
+    reg = pd.read_csv(out / "outputs" / "S0_baseline" / "summary_by_region.csv")
+    assert set(reg.region) >= {"Northern Red Sea", "Central Red Sea", "Southern Red Sea"}

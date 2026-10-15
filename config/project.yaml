@@ -35,10 +35,40 @@ paths:
   planning_units_field: name
   outputs_dir: outputs
 
+regions:
+  # Three assessment regions based on the MEOW ecoregions (Spalding et al. 2007):
+  # "Northern and Central Red Sea" is split at split_latitude into Northern and Central;
+  # "Southern Red Sea" is the Southern region. Built by scripts/build_regions.py.
+  file: data/raw/boundaries/regions.gpkg
+  field: region
+  meow_file: data/raw/boundaries/meow_ecos.shp
+  # Latitude (degrees N) where MEOW "Northern and Central Red Sea" is split into
+  # Northern (north of the line) and Central (south of it). TO BE CONFIRMED.
+  north_central_split_latitude: null
+  raster: data/processed/grid/regions.tif
+  # Region id 0 (cells not covered by the polygons) uses the default matrix.
+  list:
+    - {id: 1, code: northern, name: Northern Red Sea}
+    - {id: 2, code: central, name: Central Red Sea}
+    - {id: 3, code: southern, name: Southern Red Sea}
+
 model:
+  # Default matrix, used for any region without its own matrix below
   sensitivity_matrix: config/sensitivity_matrix.csv
   sensitivity_confidence: config/sensitivity_confidence.csv
+  # One matrix per region. Until the expert workshop scores each region separately,
+  # all three point to the same draft matrix.
+  regional_matrices:
+    northern: {matrix: config/sensitivity_matrix.csv, confidence: config/sensitivity_confidence.csv}
+    central: {matrix: config/sensitivity_matrix.csv, confidence: config/sensitivity_confidence.csv}
+    southern: {matrix: config/sensitivity_matrix.csv, confidence: config/sensitivity_confidence.csv}
   hotspot_percentile: 90
+  # Results are also given on a 0 to 100 scale: 100 = this percentile of baseline impact
+  result_normalization_percentile: 95
+  # Rarity-adjusted impact: each component's impact is divided by the share of the
+  # study area it occupies, so rare components weigh more. Components below this
+  # share are left out of the rarity-adjusted layer to avoid extreme values.
+  rarity_min_share: 0.0005
   # Components reported first in screening reports (coral, turtle and related mandates)
   focal_components: [coral_shallow, coral_mesophotic, seagrass, mangrove, turtle_nesting,
                      green_turtle, hawksbill_turtle, dugong]

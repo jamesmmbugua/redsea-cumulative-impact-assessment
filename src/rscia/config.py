@@ -19,6 +19,12 @@ class Config:
     sensitivity: pd.DataFrame
     sensitivity_confidence: pd.DataFrame
     warnings: list[str] = field(default_factory=list)
+    # region id -> (sensitivity, confidence); id 0 is the default matrix
+    regional: dict = field(default_factory=dict)
+
+    @property
+    def regions(self) -> list[dict]:
+        return (self.project.get("regions") or {}).get("list", [])
 
     # ---- convenience -------------------------------------------------
     def path(self, rel: str | None) -> Path | None:
@@ -80,7 +86,38 @@ def load_config(root: str | Path = ".") -> Config:
         sensitivity_confidence=conf,
     )
     _validate(cfg)
+    _load_regional(cfg)
     return cfg
+
+
+def _read_matrix(cfg: Config, rel: str | None, fallback: pd.DataFrame) -> pd.DataFrame:
+    if not rel:
+        return fallback
+    p = cfg.path(rel)
+    if not p.exists():
+        cfg.warnings.append(f"Matrix file not found, using default: {rel}")
+        return fallback
+    return pd.read_csv(p, index_col=0)
+
+
+def _load_regional(cfg: Config) -> None:
+    """Sensitivity and confidence matrix per region id. Id 0 = default (outside regions)."""
+    cfg.regional = {0: (cfg.sensitivity, cfg.sensitivity_confidence)}
+    spec = cfg.project["model"].get("regional_matrices") or {}
+    errors = []
+    for r in cfg.regions:
+        m = spec.get(r["code"], {}) or {}
+        s = _read_matrix(cfg, m.get("matrix"), cfg.sensitivity)
+        c = _read_matrix(cfg, m.get("confidence"), cfg.sensitivity_confidence)
+        miss = (set(cfg.pressure_ids) - set(s.index)) | (set(cfg.component_ids) - set(s.columns))
+        if miss:
+            errors.append(f"Matrix for region {r['code']} is missing {sorted(miss)}")
+        vals = s.reindex(index=cfg.pressure_ids, columns=cfg.component_ids).to_numpy(dtype=float)
+        if (vals < 0).any() or (vals > 1).any():
+            errors.append(f"Matrix for region {r['code']}: scores must be between 0 and 1")
+        cfg.regional[int(r["id"])] = (s, c)
+    if errors:
+        raise ValueError("Configuration errors:\n  " + "\n  ".join(errors))
 
 
 def _validate(cfg: Config) -> None:

@@ -96,6 +96,13 @@ def cmd_screen(args):
         print(f"Report: {screen(cfg, load_grid(cfg), Path(f), args.baseline)}")
 
 
+def cmd_export_symphony(args):
+    from .pipeline import load_grid
+    from .symphony_export import export_symphony
+    cfg = _cfg(args)
+    print(f"Symphony baseline written to {export_symphony(cfg, load_grid(cfg), args.scenario)}")
+
+
 def cmd_demo(args):
     from . import demo
     from .pipeline import expand_runs, make_grid, prepare_pressures, run_scenario
@@ -114,7 +121,7 @@ def cmd_demo(args):
     for r in runs:
         run_scenario(cfg, r, grid)
     demo.build_demo_surveys(cfg, grid)
-    print(validate(cfg, grid, "S0_baseline").to_string(index=False))
+    print(validate(cfg, grid, runs[0].run_id).to_string(index=False))
     tab = pd.concat([compare(cfg, grid, r.run_id) for r in runs[1:]], ignore_index=True)
     tab.to_csv(cfg.outputs_dir / "comparisons" / "all_runs_summary.csv", index=False)
     print(tab[["run", "total_baseline", "total_scenario", "change_pct"]].to_string(index=False))
@@ -122,6 +129,8 @@ def cmd_demo(args):
     from .screening import screen
     rep = screen(cfg, grid, demo.build_demo_application(cfg))
     print(f"Screening report: {rep}")
+    from .symphony_export import export_symphony
+    print(f"Symphony export: {export_symphony(cfg, grid)}")
     print(f"\nDemo finished. Outputs in {cfg.outputs_dir}")
 
 
@@ -150,6 +159,9 @@ def main(argv=None):
     p.add_argument("--baseline", default="S0_baseline")
     p.set_defaults(fn=cmd_screen)
     sub.add_parser("maps", help="quick-look PNG maps of all runs").set_defaults(fn=cmd_maps)
+    p = sub.add_parser("export-symphony", help="export a run's layers and matrices in Symphony format")
+    p.add_argument("--scenario", default=None, help="run id (default: the baseline)")
+    p.set_defaults(fn=cmd_export_symphony)
     p = sub.add_parser("demo", help="run the full pipeline on synthetic data")
     p.add_argument("--out", default="demo_run")
     p.set_defaults(fn=cmd_demo)

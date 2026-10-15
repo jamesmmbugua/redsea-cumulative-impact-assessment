@@ -17,9 +17,49 @@ def run_dir(cfg: Config, run_id: str):
     return cfg.outputs_dir / run_id
 
 
+def default_baseline_id(cfg: Config) -> str:
+    return cfg.scenarios[0]["id"]
+
+
+def result_scale(cfg: Config, run, res, grid: Grid) -> dict:
+    """Reference values for the 0 to 100 scale, taken from the baseline run.
+
+    The baseline run sets them (the chosen percentile of its non-zero impact); every other
+    run reuses them so all runs share one scale. If the baseline has not been run yet, the
+    run's own values are used and a warning is recorded.
+    """
+    f = cfg.outputs_dir / "result_scale.json"
+    pct = cfg.project["model"].get("result_normalization_percentile", 95)
+
+    def ref(a):
+        v = a[grid.mask & (a > 0)] if a is not None else np.array([])
+        return float(np.percentile(v, pct)) if v.size else 0.0
+
+    if run.run_id == default_baseline_id(cfg):
+        scale = {"percentile": pct, "impact": ref(res.total), "rarity_adjusted": ref(res.rarity_adjusted),
+                 "from_run": run.run_id}
+        f.parent.mkdir(parents=True, exist_ok=True)
+        f.write_text(json.dumps(scale, indent=2))
+        return scale
+    if f.exists():
+        return json.loads(f.read_text())
+    import logging
+    logging.getLogger("rscia").warning("Baseline not run yet: 0 to 100 scale taken from %s itself", run.run_id)
+    return {"percentile": pct, "impact": ref(res.total), "rarity_adjusted": ref(res.rarity_adjusted),
+            "from_run": run.run_id}
+
+
 def write_run_outputs(cfg: Config, grid: Grid, run, res, missing: list[str]) -> None:
+    from .model import scale_0_100
+
     d = run_dir(cfg, run.run_id)
     d.mkdir(parents=True, exist_ok=True)
+
+    scale = result_scale(cfg, run, res, grid)
+    grid.write(d / "impact_index.tif", scale_0_100(res.total, scale["impact"]))
+    if res.rarity_adjusted is not None:
+        grid.write(d / "impact_rarity_adjusted.tif", res.rarity_adjusted)
+        grid.write(d / "impact_rarity_adjusted_index.tif", scale_0_100(res.rarity_adjusted, scale["rarity_adjusted"]))
 
     grid.write(d / "impact_total.tif", res.total)
     grid.write(d / "impact_by_pressure.tif", res.by_pressure, res.pressure_ids)
@@ -53,6 +93,7 @@ def write_run_outputs(cfg: Config, grid: Grid, run, res, missing: list[str]) -> 
     sc.groupby("group")[["impact", "share_pct"]].sum().sort_values("impact", ascending=False).to_csv(d / "summary_by_group.csv")
 
     _planning_unit_summary(cfg, grid, res, d)
+    _region_summary(cfg, grid, res, d, scale)
 
     info = {
         "run_id": run.run_id, "scenario": run.scenario_id, "description": run.description,
@@ -64,9 +105,35 @@ def write_run_outputs(cfg: Config, grid: Grid, run, res, missing: list[str]) -> 
         "hotspot_threshold": thr if np.isfinite(thr) else None,
         "local_share_pct": float(sp.loc[sp.kind == "local", "share_pct"].sum()),
         "climate_share_pct": float(sp.loc[sp.kind == "climate", "share_pct"].sum()),
+        "scale_0_100": scale,
+        "mean_impact_index": float(np.nanmean(100 * res.total / scale["impact"])) if scale["impact"] else None,
         "missing_inputs": missing,
     }
     (d / "run_info.json").write_text(json.dumps(info, indent=2))
+
+
+def _region_summary(cfg: Config, grid: Grid, res, d, scale) -> None:
+    """Impact totals, means and top pressures per assessment region."""
+    from .pipeline import load_regions
+
+    if not cfg.regions:
+        return
+    reg = load_regions(cfg, grid)
+    names = {p["id"]: p["name"] for p in cfg.pressures}
+    rows = []
+    for r in [{"id": 0, "name": "Outside regions"}] + cfg.regions:
+        m = (reg == r["id"]) & grid.mask
+        if not m.any():
+            continue
+        tot = float(np.nansum(res.total[m]))
+        byp = {p: float(np.nansum(res.by_pressure[i][m])) for i, p in enumerate(res.pressure_ids)}
+        top = sorted(byp, key=byp.get, reverse=True)[:3]
+        rows.append({"region": r["name"], "cells": int(m.sum()), "impact_total": tot,
+                     "share_of_eez_pct": 100 * tot / float(np.nansum(res.total)) if np.nansum(res.total) else 0,
+                     "mean_impact_index": float(np.nanmean(100 * res.total[m] / scale["impact"])) if scale["impact"] else None,
+                     "mean_rarity_adjusted": float(np.nanmean(res.rarity_adjusted[m])) if res.rarity_adjusted is not None else None,
+                     "top_pressures": "; ".join(f"{names[t]} ({100 * byp[t] / tot:.0f}%)" for t in top if tot)})
+    pd.DataFrame(rows).to_csv(d / "summary_by_region.csv", index=False)
 
 
 def _planning_unit_summary(cfg: Config, grid: Grid, res, d) -> None:
@@ -90,9 +157,19 @@ def _planning_unit_summary(cfg: Config, grid: Grid, res, d) -> None:
     pd.DataFrame(rows).to_csv(d / "summary_by_planning_unit.csv", index=False)
 
 
-def compare(cfg: Config, grid: Grid, run_id: str, baseline_id: str = "S0_baseline") -> pd.DataFrame:
+def _rarity_change(grid: Grid, a_dir, b_dir) -> dict:
+    fa, fb = a_dir / "impact_rarity_adjusted.tif", b_dir / "impact_rarity_adjusted.tif"
+    if not (fa.exists() and fb.exists()):
+        return {}
+    ra, rb = np.nansum(grid.read(fa, "nearest")), np.nansum(grid.read(fb, "nearest"))
+    return {"rarity_adjusted_change_pct": float(100 * (ra - rb) / rb) if rb else np.nan}
+
+
+def compare(cfg: Config, grid: Grid, run_id: str, baseline_id: str | None = None) -> pd.DataFrame:
     """Difference between a run and the baseline: map and change tables."""
     import rasterio
+
+    baseline_id = baseline_id or default_baseline_id(cfg)
 
     a_dir, b_dir = run_dir(cfg, run_id), run_dir(cfg, baseline_id)
     for x in (a_dir, b_dir):
@@ -131,6 +208,7 @@ def compare(cfg: Config, grid: Grid, run_id: str, baseline_id: str = "S0_baselin
         "change_pct": float(100 * (np.nansum(a) - np.nansum(b)) / np.nansum(b)) if np.nansum(b) else np.nan,
         "cells_increased": int(np.nansum(diff > 1e-6)), "cells_decreased": int(np.nansum(diff < -1e-6)),
         "max_cell_increase": float(np.nanmax(diff)) if np.isfinite(diff).any() else 0.0,
+        **_rarity_change(grid, a_dir, b_dir),
     }])
     summary.to_csv(out / "summary.csv", index=False)
     return summary
