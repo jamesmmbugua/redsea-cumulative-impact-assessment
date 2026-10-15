@@ -1,0 +1,10 @@
+data/raw/**
+data/interim/**
+data/processed/**
+!data/**/README.md
+outputs/
+demo_run/
+__pycache__/
+*.egg-info/
+.ipynb_checkpoints/
+.pytest_cache/

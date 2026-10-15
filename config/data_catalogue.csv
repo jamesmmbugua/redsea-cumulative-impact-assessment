@@ -1,0 +1,45 @@
+layer_id,layer_type,name,source,raw_file,date_obtained,licence,owner,status,data_confidence,notes
+eez,boundary,Saudi Red Sea EEZ,Marine Regions (VLIZ),data/raw/boundaries/eez_v12.gpkg,,,,to_obtain,,
+coastline,boundary,Land polygons,OpenStreetMap,data/raw/boundaries/land_polygons.gpkg,,,,to_obtain,,
+bathymetry,base,Bathymetry,GEBCO,data/raw/base/gebco.tif,,,,to_obtain,,
+coral_shallow,component,Shallow coral reef (0 to 30 m),"Allen Coral Atlas (coral/algae benthic class), checked against survey sites",,,,,to_obtain,2,
+coral_mesophotic,component,Mesophotic coral (30 to 150 m),"Habitat model from bathymetry, light at bottom, temperature (Bio-ORACLE)",,,,,to_obtain,1,
+seagrass,component,Seagrass beds,"Allen Coral Atlas seagrass class, UNEP-WCMC, national surveys",,,,,to_obtain,1,
+mangrove,component,Mangroves,Global Mangrove Watch,,,,,to_obtain,3,
+intertidal_sabkha,component,Intertidal flats and sabkha,"Global tidal flats (Murray et al.), imagery",,,,,to_obtain,2,
+soft_sediment,component,Subtidal soft sediment,"Allen Coral Atlas sand/rubble classes, bathymetry",,,,,to_obtain,1,
+hard_substrate,component,Non-reef hard substrate,Allen Coral Atlas rock class,,,,,to_obtain,1,
+deep_sea,component,Deep-sea habitats (below 200 m),GEBCO depth mask,,,,,to_obtain,2,
+dugong,component,Dugong,"Aerial surveys, sightings, seagrass layer",,,,,to_obtain,1,
+green_turtle,component,Green turtle (foraging),"Tagging studies, sightings, seagrass layer",,,,,to_obtain,1,
+hawksbill_turtle,component,Hawksbill turtle (foraging),"Tagging studies, sightings, coral layer",,,,,to_obtain,1,
+turtle_nesting,component,Turtle nesting beaches,"Nesting surveys (NCW, literature)",,,,,to_obtain,2,
+whale_shark,component,Whale shark,"Sightings, tagging, known aggregation sites",,,,,to_obtain,1,
+manta_mobula,component,Manta and mobula rays,"Sightings, dive operator records",,,,,to_obtain,1,
+dolphins,component,Dolphins (coastal and oceanic),"Sightings, surveys, OBIS",,,,,to_obtain,1,
+other_cetaceans,component,Other cetaceans,"OBIS, literature",,,,,to_obtain,1,
+seabird_breeding,component,Seabird breeding islands,"BirdLife IBAs, NCW island surveys",,,,,to_obtain,2,
+seabird_foraging,component,Seabird foraging areas,"Distance from colonies, productivity",,,,,to_obtain,1,
+reef_fish,component,Reef fish assemblages,Coral layer weighted by survey fish data,,,,,to_obtain,1,
+spawning_aggregations,component,Fish spawning aggregation sites,"Literature, fisher knowledge",,,,,to_obtain,1,
+pelagic_productive,component,Productive pelagic waters,Bio-ORACLE chlorophyll and primary productivity,,,,,to_obtain,2,
+desal_brine,pressure,Hypersaline brine,,data/raw/pressures/desalination_plants.gpkg,,,,to_obtain,,decay
+thermal_discharge,pressure,Thermal discharge,,data/raw/pressures/thermal_outfalls.gpkg,,,,to_obtain,,decay
+chemical_discharge,pressure,"Antiscalants, chlorine and metals",,data/raw/pressures/desalination_plants.gpkg,,,,to_obtain,,decay
+reclamation,pressure,Reclamation and habitat loss,,data/raw/pressures/reclamation.gpkg,,,,to_obtain,,footprint
+dredging_sediment,pressure,Dredging and sedimentation,,data/raw/pressures/dredging_sites.gpkg,,,,to_obtain,,decay
+wastewater_nutrients,pressure,Wastewater and nutrients,,data/raw/pressures/wastewater_outfalls.gpkg,,,,to_obtain,,decay
+shipping_noise,pressure,Underwater noise from shipping,,data/raw/pressures/ais_density.tif,,,,to_obtain,,density
+ship_strike,pressure,Vessel collision risk,,data/raw/pressures/ais_speed_weighted_density.tif,,,,to_obtain,,density
+oil_spill_risk,pressure,Oil spill risk,,data/raw/pressures/oil_infrastructure.gpkg,,,,to_obtain,,decay
+fishing_commercial,pressure,Commercial fishing,,data/raw/pressures/gfw_fishing_effort.tif,,,,to_obtain,,density
+fishing_artisanal,pressure,Artisanal fishing,,data/raw/pressures/landing_sites.gpkg,,,,to_obtain,,decay
+aquaculture,pressure,Aquaculture effluent,,data/raw/pressures/aquaculture_farms.gpkg,,,,to_obtain,,decay
+tourism_diving,pressure,Tourism and diving,,data/raw/pressures/tourism_sites.gpkg,,,,to_obtain,,decay
+light_pollution,pressure,Artificial light at night,,data/raw/pressures/viirs_annual.tif,,,,to_obtain,,direct
+marine_heatwaves,pressure,Marine heatwaves,,data/raw/climate/crw_dhw4_frequency.tif,,,,to_obtain,,direct
+warming,pressure,Long-term warming,,,,,,to_obtain,,climate_delta
+acidification,pressure,Ocean acidification,,,,,,to_obtain,,climate_delta
+deoxygenation,pressure,Oxygen loss,,,,,,to_obtain,,climate_delta
+salinity_change,pressure,Salinity change,,,,,,to_obtain,,climate_delta
+coral_surveys,survey,Coral reef survey sites (100),Project surveys,data/surveys/coral_surveys.csv,,,,to_load,3,

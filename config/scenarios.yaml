@@ -1,0 +1,46 @@
+# Scenarios change pressure layers only.
+#
+# development: list of changes from planned projects. Each change is one of
+#   mode: add_sources     extra features (points or polygons) added to the baseline sources
+#                         of a decay or footprint pressure, processed with the same rules
+#   mode: replace_raster  a ready-made raster that replaces the baseline layer
+#   mode: add_raster      a ready-made raster added to the baseline layer
+#
+# climate: list of {ssp, horizon}. Each entry becomes its own run named
+#   <scenario id>_<ssp>_<horizon>. Omit for present climate.
+
+climate_futures: &climate_futures
+  - {ssp: ssp126, horizon: "2050"}
+  - {ssp: ssp126, horizon: "2100"}
+  - {ssp: ssp245, horizon: "2050"}
+  - {ssp: ssp245, horizon: "2100"}
+  - {ssp: ssp585, horizon: "2050"}
+  - {ssp: ssp585, horizon: "2100"}
+
+planned_development: &planned_development
+  - {pressure: desal_brine, mode: add_sources, file: data/raw/scenarios/development/desalination_planned.gpkg}
+  - {pressure: chemical_discharge, mode: add_sources, file: data/raw/scenarios/development/desalination_planned.gpkg}
+  - {pressure: thermal_discharge, mode: add_sources, file: data/raw/scenarios/development/thermal_planned.gpkg}
+  - {pressure: reclamation, mode: add_sources, file: data/raw/scenarios/development/reclamation_planned.gpkg}
+  - {pressure: dredging_sediment, mode: add_sources, file: data/raw/scenarios/development/dredging_planned.gpkg}
+  - {pressure: wastewater_nutrients, mode: add_sources, file: data/raw/scenarios/development/wastewater_planned.gpkg}
+  - {pressure: tourism_diving, mode: add_sources, file: data/raw/scenarios/development/tourism_planned.gpkg}
+  - {pressure: aquaculture, mode: add_sources, file: data/raw/scenarios/development/aquaculture_planned.gpkg}
+  - {pressure: light_pollution, mode: add_raster, file: data/raw/scenarios/development/light_planned.tif}
+
+scenarios:
+  - id: S0_baseline
+    description: Current pressures, present climate
+
+  - id: S1_development
+    description: Current pressures plus planned developments, present climate
+    development: *planned_development
+
+  - id: S2_climate
+    description: Current pressures, future climate
+    climate: *climate_futures
+
+  - id: S3_combined
+    description: Current pressures plus planned developments, future climate
+    development: *planned_development
+    climate: *climate_futures

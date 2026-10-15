@@ -1,0 +1,181 @@
+# Pressures.
+# method:
+#   decay          point sources, intensity = weight x exp(-distance / decay_km), summed
+#   footprint      polygons rasterized to fractional cover (optionally spread with decay_km)
+#   density        an existing density raster (AIS, fishing effort) resampled to the grid
+#   direct         an existing raster used as is (night lights, heatwave frequency)
+#   climate_delta  change between Bio-ORACLE present and future layers
+# sources: raw input relative to the repository root
+# weight_field: attribute giving the size of each source (capacity, production)
+# log_transform: apply log1p before normalization (for skewed layers)
+# kind: local (managed in Saudi waters) or climate
+
+pressures:
+  - id: desal_brine
+    name: Hypersaline brine
+    kind: local
+    method: decay
+    sources: data/raw/pressures/desalination_plants.gpkg
+    weight_field: capacity_m3_day
+    decay_km: 5
+    log_transform: true
+
+  - id: thermal_discharge
+    name: Thermal discharge
+    kind: local
+    method: decay
+    sources: data/raw/pressures/thermal_outfalls.gpkg
+    weight_field: capacity_mw
+    decay_km: 3
+    log_transform: true
+
+  - id: chemical_discharge
+    name: Antiscalants, chlorine and metals
+    kind: local
+    method: decay
+    sources: data/raw/pressures/desalination_plants.gpkg
+    weight_field: capacity_m3_day
+    decay_km: 4
+    log_transform: true
+
+  - id: reclamation
+    name: Reclamation and habitat loss
+    kind: local
+    method: footprint
+    sources: data/raw/pressures/reclamation.gpkg
+    decay_km: 0
+    log_transform: false
+
+  - id: dredging_sediment
+    name: Dredging and sedimentation
+    kind: local
+    method: decay
+    sources: data/raw/pressures/dredging_sites.gpkg
+    weight_field: null
+    decay_km: 5
+    log_transform: false
+
+  - id: wastewater_nutrients
+    name: Wastewater and nutrients
+    kind: local
+    method: decay
+    sources: data/raw/pressures/wastewater_outfalls.gpkg
+    weight_field: population_served
+    decay_km: 5
+    log_transform: true
+
+  - id: shipping_noise
+    name: Underwater noise from shipping
+    kind: local
+    method: density
+    sources: data/raw/pressures/ais_density.tif
+    log_transform: true
+
+  - id: ship_strike
+    name: Vessel collision risk
+    kind: local
+    method: density
+    sources: data/raw/pressures/ais_speed_weighted_density.tif
+    log_transform: true
+
+  - id: oil_spill_risk
+    name: Oil spill risk
+    kind: local
+    method: decay
+    sources: data/raw/pressures/oil_infrastructure.gpkg
+    weight_field: null
+    decay_km: 20
+    log_transform: false
+
+  - id: fishing_commercial
+    name: Commercial fishing
+    kind: local
+    method: density
+    sources: data/raw/pressures/gfw_fishing_effort.tif
+    log_transform: true
+
+  - id: fishing_artisanal
+    name: Artisanal fishing
+    kind: local
+    method: decay
+    sources: data/raw/pressures/landing_sites.gpkg
+    weight_field: boats
+    decay_km: 10
+    log_transform: true
+
+  - id: aquaculture
+    name: Aquaculture effluent
+    kind: local
+    method: decay
+    sources: data/raw/pressures/aquaculture_farms.gpkg
+    weight_field: production_t_year
+    decay_km: 3
+    log_transform: true
+
+  - id: tourism_diving
+    name: Tourism and diving
+    kind: local
+    method: decay
+    sources: data/raw/pressures/tourism_sites.gpkg
+    weight_field: visitors_year
+    decay_km: 2
+    log_transform: true
+
+  - id: light_pollution
+    name: Artificial light at night
+    kind: local
+    method: direct
+    sources: data/raw/pressures/viirs_annual.tif
+    log_transform: true
+
+  - id: marine_heatwaves
+    name: Marine heatwaves
+    kind: climate
+    method: direct
+    # Frequency of DHW >= 4 from NOAA Coral Reef Watch over the baseline period
+    sources: data/raw/climate/crw_dhw4_frequency.tif
+    log_transform: false
+
+  - id: warming
+    name: Long-term warming
+    kind: climate
+    method: climate_delta
+    variable: thetao_max
+    direction: increase
+    log_transform: false
+
+  - id: acidification
+    name: Ocean acidification
+    kind: climate
+    method: climate_delta
+    variable: ph_mean
+    direction: decrease
+    log_transform: false
+
+  - id: deoxygenation
+    name: Oxygen loss
+    kind: climate
+    method: climate_delta
+    variable: o2_mean
+    direction: decrease
+    log_transform: false
+
+  - id: salinity_change
+    name: Salinity change
+    kind: climate
+    method: climate_delta
+    variable: so_mean
+    direction: absolute
+    log_transform: false
+
+# Bio-ORACLE file naming. Files are resampled to the grid by `rscia climate`.
+# {variable}, {ssp}, {horizon} are filled in per scenario. Check the variable names
+# against the Bio-ORACLE v3 ERDDAP datasets when downloading.
+bio_oracle:
+  raw_dir: data/raw/climate/bio_oracle
+  present_pattern: "{variable}_baseline.tif"
+  future_pattern: "{variable}_{ssp}_{horizon}.tif"
+  # Present-day climate deltas are zero by definition. The worst projected change
+  # (largest SSP, latest horizon) is the normalization reference so all scenarios
+  # share one scale.
+  reference: {ssp: ssp585, horizon: "2100"}

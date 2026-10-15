@@ -1,0 +1,156 @@
+# Ecosystem components.
+# file: model-ready 1 km raster (0 to 1) in paths.components_dir
+# method: how the raw data becomes the raster (see src/rscia/layers.py)
+#   presence    rasterize polygons to fractional cover per cell
+#   density     kernel density of point records
+#   habitat_model  output of a habitat suitability model (built separately)
+#   raster      resample an existing raster
+# data_confidence: 1 low, 2 medium, 3 high (update once data is in hand)
+
+components:
+  - id: coral_shallow
+    name: Shallow coral reef (0 to 30 m)
+    group: benthic
+    method: presence
+    source: Allen Coral Atlas (coral/algae benthic class), checked against survey sites
+    data_confidence: 2
+
+  - id: coral_mesophotic
+    name: Mesophotic coral (30 to 150 m)
+    group: benthic
+    method: habitat_model
+    source: Habitat model from bathymetry, light at bottom, temperature (Bio-ORACLE)
+    data_confidence: 1
+
+  - id: seagrass
+    name: Seagrass beds
+    group: benthic
+    method: presence
+    source: Allen Coral Atlas seagrass class, UNEP-WCMC, national surveys
+    data_confidence: 1
+
+  - id: mangrove
+    name: Mangroves
+    group: benthic
+    method: presence
+    source: Global Mangrove Watch
+    data_confidence: 3
+
+  - id: intertidal_sabkha
+    name: Intertidal flats and sabkha
+    group: benthic
+    method: presence
+    source: Global tidal flats (Murray et al.), imagery
+    data_confidence: 2
+
+  - id: soft_sediment
+    name: Subtidal soft sediment
+    group: benthic
+    method: presence
+    source: Allen Coral Atlas sand/rubble classes, bathymetry
+    data_confidence: 1
+
+  - id: hard_substrate
+    name: Non-reef hard substrate
+    group: benthic
+    method: presence
+    source: Allen Coral Atlas rock class
+    data_confidence: 1
+
+  - id: deep_sea
+    name: Deep-sea habitats (below 200 m)
+    group: benthic
+    method: raster
+    source: GEBCO depth mask
+    data_confidence: 2
+
+  - id: dugong
+    name: Dugong
+    group: megafauna
+    method: habitat_model
+    source: Aerial surveys, sightings, seagrass layer
+    data_confidence: 1
+
+  - id: green_turtle
+    name: Green turtle (foraging)
+    group: megafauna
+    method: habitat_model
+    source: Tagging studies, sightings, seagrass layer
+    data_confidence: 1
+
+  - id: hawksbill_turtle
+    name: Hawksbill turtle (foraging)
+    group: megafauna
+    method: habitat_model
+    source: Tagging studies, sightings, coral layer
+    data_confidence: 1
+
+  - id: turtle_nesting
+    name: Turtle nesting beaches
+    group: megafauna
+    method: presence
+    source: Nesting surveys (NCW, literature)
+    data_confidence: 2
+
+  - id: whale_shark
+    name: Whale shark
+    group: megafauna
+    method: density
+    source: Sightings, tagging, known aggregation sites
+    data_confidence: 1
+
+  - id: manta_mobula
+    name: Manta and mobula rays
+    group: megafauna
+    method: density
+    source: Sightings, dive operator records
+    data_confidence: 1
+
+  - id: dolphins
+    name: Dolphins (coastal and oceanic)
+    group: megafauna
+    method: density
+    source: Sightings, surveys, OBIS
+    data_confidence: 1
+
+  - id: other_cetaceans
+    name: Other cetaceans
+    group: megafauna
+    method: density
+    source: OBIS, literature
+    data_confidence: 1
+
+  - id: seabird_breeding
+    name: Seabird breeding islands
+    group: birds
+    method: presence
+    source: BirdLife IBAs, NCW island surveys
+    data_confidence: 2
+
+  - id: seabird_foraging
+    name: Seabird foraging areas
+    group: birds
+    method: habitat_model
+    source: Distance from colonies, productivity
+    data_confidence: 1
+
+  - id: reef_fish
+    name: Reef fish assemblages
+    group: fish
+    method: habitat_model
+    source: Coral layer weighted by survey fish data
+    data_confidence: 1
+
+  - id: spawning_aggregations
+    name: Fish spawning aggregation sites
+    group: fish
+    method: presence
+    source: Literature, fisher knowledge
+    data_confidence: 1
+
+  - id: pelagic_productive
+    name: Productive pelagic waters
+    group: pelagic
+    method: raster
+    source: Bio-ORACLE chlorophyll and primary productivity
+    data_confidence: 2

@@ -1,0 +1,2 @@
+site_id,latitude,longitude,survey_date,depth_m,live_coral_cover_pct,recent_mortality_pct,bleaching_pct,macroalgae_cover_pct,coral_genera_richness,fish_biomass_kg_ha,notes
+RS001,22.3200,39.0600,2025-04-12,8,42.5,3.0,5.0,4.0,28,1250,example row: replace with real data
