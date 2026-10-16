@@ -78,10 +78,16 @@ def write_run_outputs(cfg: Config, grid: Grid, run, res, missing: list[str]) -> 
     pt = res.pressure_totals()
     kind = {p["id"]: p.get("kind", "local") for p in cfg.pressures}
     names = {p["id"]: p["name"] for p in cfg.pressures}
+    ptheme = {p["id"]: p["theme"] for p in cfg.pressures}
+    plabel = cfg.theme_labels("pressures")
     sp = pd.DataFrame({"pressure": pt.index, "name": [names[i] for i in pt.index],
+                       "theme": [ptheme[i] for i in pt.index],
                        "kind": [kind[i] for i in pt.index], "impact": pt.values})
     sp["share_pct"] = 100 * sp["impact"] / total if total else 0.0
     sp.sort_values("impact", ascending=False).to_csv(d / "summary_by_pressure.csv", index=False)
+    st = sp.groupby("theme")[["impact", "share_pct"]].sum().sort_values("impact", ascending=False)
+    st.insert(0, "label", [plabel.get(t, t) for t in st.index])
+    st.to_csv(d / "summary_by_pressure_theme.csv")
 
     ct = res.component_totals()
     group = {c["id"]: c["group"] for c in cfg.components}
@@ -90,7 +96,10 @@ def write_run_outputs(cfg: Config, grid: Grid, run, res, missing: list[str]) -> 
                        "group": [group[i] for i in ct.index], "impact": ct.values})
     sc["share_pct"] = 100 * sc["impact"] / total if total else 0.0
     sc.sort_values("impact", ascending=False).to_csv(d / "summary_by_component.csv", index=False)
-    sc.groupby("group")[["impact", "share_pct"]].sum().sort_values("impact", ascending=False).to_csv(d / "summary_by_group.csv")
+    sg = sc.groupby("group")[["impact", "share_pct"]].sum().sort_values("impact", ascending=False)
+    clabel = cfg.theme_labels("components")
+    sg.insert(0, "label", [clabel.get(g, g) for g in sg.index])
+    sg.to_csv(d / "summary_by_group.csv")
 
     _planning_unit_summary(cfg, grid, res, d)
     _region_summary(cfg, grid, res, d, scale)

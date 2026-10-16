@@ -40,18 +40,6 @@ METADATA_FIELDS = [
 assert len(METADATA_FIELDS) == 43
 
 ORG = "General Authority for Conservation of Corals and Sea Turtles in the Red Sea"
-THEMES = {"benthic": "Benthic habitats", "megafauna": "Marine megafauna", "birds": "Seabirds",
-          "fish": "Fish", "pelagic": "Pelagic"}
-PRESSURE_THEMES = {
-    "desal_brine": "Desalination and power", "thermal_discharge": "Desalination and power",
-    "chemical_discharge": "Desalination and power", "reclamation": "Coastal development",
-    "dredging_sediment": "Coastal development", "wastewater_nutrients": "Pollution",
-    "shipping_noise": "Shipping", "ship_strike": "Shipping", "oil_spill_risk": "Shipping",
-    "fishing_commercial": "Fishing", "fishing_artisanal": "Fishing", "aquaculture": "Aquaculture",
-    "tourism_diving": "Tourism", "light_pollution": "Coastal development",
-}
-
-
 def _to_byte(a: np.ndarray, mask: np.ndarray) -> np.ndarray:
     v = np.clip(np.nan_to_num(a) * 100.0, 0, 100).round().astype("uint8")
     v[~mask] = 255  # nodata
@@ -114,12 +102,12 @@ def export_symphony(cfg: Config, grid: Grid, run_id: str | None = None, out_dir:
     _write_multiband(out / "pressure.tif", grid, [P[p["id"]] for p in press], [p["name"] for p in press])
 
     _write_csv(out / "ecosystem_metadata.csv",
-               _metadata_rows(comps, "Ecosystem", "ecosystem.tif", lambda c: THEMES.get(c["group"], c["group"]),
+               _metadata_rows(comps, "Ecosystem", "ecosystem.tif", lambda c: cfg.theme_labels("components").get(c["group"], c["group"]),
                               lambda c: c.get("data_confidence")),
                METADATA_FIELDS)
     _write_csv(out / "pressure_metadata.csv",
                _metadata_rows(press, "Pressure", "pressure.tif",
-                              lambda p: "Climate" if p.get("kind") == "climate" else PRESSURE_THEMES.get(p["id"], "Other"),
+                              lambda p: cfg.theme_labels("pressures").get(p["theme"], p["theme"]),
                               lambda p: p.get("data_confidence")),
                METADATA_FIELDS)
 

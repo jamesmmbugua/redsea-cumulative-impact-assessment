@@ -7,14 +7,14 @@ grid:
   # Albers Equal Area centred on the Saudi Red Sea
   crs: "+proj=aea +lat_0=22 +lon_0=39 +lat_1=18.5 +lat_2=27.5 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs"
   resolution_m: 1000
-  eez_file: data/raw/boundaries/eez_v12.gpkg
+  eez_file: data/interim/reference/boundaries/eez_v12.gpkg
   # scripts/download_eez.py writes the Saudi Red Sea part only, so no filter is needed.
   # If you use another EEZ file, select the Saudi Red Sea feature here, e.g.
   # eez_filter: {field: GEONAME, values: ["..."]}
   eez_filter: null
   # Optional: polygon to keep only the Red Sea side (used if the EEZ file has one Saudi polygon)
   clip_file: null
-  coastline_file: data/raw/boundaries/land_polygons.gpkg
+  coastline_file: data/interim/reference/boundaries/land_polygons.gpkg
   coastal_buffer_m: 2000
   template_raster: data/processed/grid/template.tif
 
@@ -27,21 +27,53 @@ normalization:
   scenario_clip_max: null
 
 paths:
+  # Three data stages, each with the same thematic folders (see docs/data_management.md):
+  #   raw      original files exactly as received, one folder per source, never edited
+  #   interim  cleaned model inputs: clipped, reprojected, standard attribute names
+  #   processed model-ready 1 km rasters written by rscia
+  raw_dir: data/raw
+  interim_dir: data/interim
+  processed_dir: data/processed
+  # Rasters are read and written as <dir>/<theme>/<id>.tif
   components_dir: data/processed/components
   pressures_dir: data/processed/pressures
   scenarios_dir: data/processed/scenarios
-  surveys_file: data/surveys/coral_surveys.csv
+  surveys_file: data/interim/reference/surveys/coral_surveys.csv
   planning_units_file: null   # optional polygons for summary tables
   planning_units_field: name
   outputs_dir: outputs
+
+themes:
+  # Thematic groups. Each component's `group` and each pressure's `theme` must be listed here.
+  # The code is the folder name at every data stage; the label is used in reports and exports.
+  reference:
+    boundaries: Boundaries and regions
+    bathymetry: Bathymetry
+    bio_oracle: Bio-ORACLE environmental layers
+    surveys: Coral reef surveys
+  components:
+    benthic_habitats: Benthic habitats
+    marine_turtles: Marine turtles
+    marine_mammals: Marine mammals
+    sharks_rays: Sharks and rays
+    seabirds: Seabirds
+    fish: Fish
+    pelagic: Pelagic
+  pressures:
+    coastal_development: Coastal development
+    discharges: Discharges
+    maritime_transport: Maritime transport
+    fisheries_aquaculture: Fisheries and aquaculture
+    tourism: Tourism
+    climate: Climate
 
 regions:
   # Three assessment regions based on the MEOW ecoregions (Spalding et al. 2007):
   # "Northern and Central Red Sea" is split at split_latitude into Northern and Central;
   # "Southern Red Sea" is the Southern region. Built by scripts/build_regions.py.
-  file: data/raw/boundaries/regions.gpkg
+  file: data/interim/reference/boundaries/regions.gpkg
   field: region
-  meow_file: data/raw/boundaries/meow_ecos.shp
+  meow_file: data/raw/reference/boundaries/meow/meow_ecos.shp
   # Latitude (degrees N) where MEOW "Northern and Central Red Sea" is split into
   # Northern (north of the line) and Central (south of it). TO BE CONFIRMED.
   north_central_split_latitude: null

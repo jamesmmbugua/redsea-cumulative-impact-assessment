@@ -76,27 +76,37 @@ def build_demo(root: Path, repo_root: Path, seed: int = 42) -> None:
     # project config for the demo area
     pfile = root / "config" / "project.yaml"
     proj = yaml.safe_load(pfile.read_text())
-    proj["grid"].update(eez_file="data/raw/boundaries/eez_demo.gpkg", eez_filter=None,
-                        clip_file=None, coastline_file="data/raw/boundaries/land_demo.gpkg")
-    proj["paths"]["surveys_file"] = "data/surveys/coral_surveys.csv"
-    proj["paths"]["planning_units_file"] = "data/raw/boundaries/planning_units_demo.gpkg"
+    bnd_rel = "data/interim/reference/boundaries"
+    proj["grid"].update(eez_file=f"{bnd_rel}/eez_demo.gpkg", eez_filter=None,
+                        clip_file=None, coastline_file=f"{bnd_rel}/land_demo.gpkg")
+    proj["paths"]["surveys_file"] = "data/interim/reference/surveys/coral_surveys.csv"
+    proj["paths"]["planning_units_file"] = f"{bnd_rel}/planning_units_demo.gpkg"
     pfile.write_text(yaml.safe_dump(proj, sort_keys=False))
 
-    raw = root / "data" / "raw"
-    (raw / "boundaries").mkdir(parents=True, exist_ok=True)
+    # synthetic inputs go where the configuration expects the cleaned (interim) files
+    bnd = root / bnd_rel
+    bnd.mkdir(parents=True, exist_ok=True)
+    pdoc = yaml.safe_load((root / "config" / "pressures.yaml").read_text())
+    src = {p["id"]: root / p["sources"] for p in pdoc["pressures"] if p.get("sources")}
+    for f in src.values():
+        f.parent.mkdir(parents=True, exist_ok=True)
+    scen = yaml.safe_load((root / "config" / "scenarios.yaml").read_text())
+    dev = {c["pressure"]: root / c["file"] for c in scen["planned_development"]}
+    for f in dev.values():
+        f.parent.mkdir(parents=True, exist_ok=True)
     lats = np.linspace(LAT0, LAT1, 60)
     coast = list(zip(_coast_lon(lats), lats))
     sea = Polygon([(LON0, LAT0)] + coast + [(LON0, LAT1)])
     land = Polygon(coast + [(LON1 + 0.2, LAT1), (LON1 + 0.2, LAT0)])
-    gpd.GeoDataFrame({"name": ["Demo EEZ"]}, geometry=[sea], crs="EPSG:4326").to_file(raw / "boundaries" / "eez_demo.gpkg")
-    gpd.GeoDataFrame(geometry=[land], crs="EPSG:4326").to_file(raw / "boundaries" / "land_demo.gpkg")
+    gpd.GeoDataFrame({"name": ["Demo EEZ"]}, geometry=[sea], crs="EPSG:4326").to_file(bnd / "eez_demo.gpkg")
+    gpd.GeoDataFrame(geometry=[land], crs="EPSG:4326").to_file(bnd / "land_demo.gpkg")
     # three synthetic assessment regions (in the real data these come from MEOW)
     regions = gpd.GeoDataFrame(
         {"region": ["northern", "central", "southern"], "name": ["Northern Red Sea", "Central Red Sea", "Southern Red Sea"]},
         geometry=[box(LON0, 21.65, COAST_LON + 0.1, LAT1), box(LON0, 21.3, COAST_LON + 0.1, 21.65),
                   box(LON0, LAT0, COAST_LON + 0.1, 21.3)], crs="EPSG:4326")
     regions["geometry"] = regions.geometry.intersection(sea)   # stop at the coast, like MEOW
-    regions.to_file(raw / "boundaries" / "regions.gpkg")
+    regions.to_file(root / proj["regions"]["file"])
     # southern matrix differs slightly to exercise the regional matrices
     sm = pd.read_csv(root / "config" / "sensitivity_matrix.csv", index_col=0)
     sm.loc["marine_heatwaves", "coral_shallow"] = 0.8
@@ -105,32 +115,29 @@ def build_demo(root: Path, repo_root: Path, seed: int = 42) -> None:
     pfile.write_text(yaml.safe_dump(proj, sort_keys=False))
     bands = [box(LON0, LAT0 + i * 0.25, LON1, LAT0 + (i + 1) * 0.25) for i in range(4)]
     gpd.GeoDataFrame({"name": ["South", "South-central", "North-central", "North"]}, geometry=bands,
-                     crs="EPSG:4326").to_file(raw / "boundaries" / "planning_units_demo.gpkg")
+                     crs="EPSG:4326").to_file(bnd / "planning_units_demo.gpkg")
 
-    # pressures (raw inputs)
-    pr = raw / "pressures"
-    pr.mkdir(parents=True, exist_ok=True)
-    _coastal_points(rng, 4, capacity_m3_day=(50_000, 600_000)).to_file(pr / "desalination_plants.gpkg")
-    _coastal_points(rng, 3, capacity_mw=(200, 1500)).to_file(pr / "thermal_outfalls.gpkg")
-    _coastal_polys(rng, 6).to_file(pr / "reclamation.gpkg")
-    _coastal_points(rng, 5).to_file(pr / "dredging_sites.gpkg")
-    _coastal_points(rng, 6, population_served=(20_000, 900_000)).to_file(pr / "wastewater_outfalls.gpkg")
-    _points(rng, 3, (38.9, 39.1), (21.3, 21.6)).to_file(pr / "oil_infrastructure.gpkg")
-    _coastal_points(rng, 12, boats=(5, 120)).to_file(pr / "landing_sites.gpkg")
-    _coastal_points(rng, 3, production_t_year=(500, 8000)).to_file(pr / "aquaculture_farms.gpkg")
-    _coastal_points(rng, 15, visitors_year=(1_000, 80_000)).to_file(pr / "tourism_sites.gpkg")
+    # pressures (cleaned model inputs)
+    _coastal_points(rng, 4, capacity_m3_day=(50_000, 600_000)).to_file(src["desal_brine"])
+    _coastal_points(rng, 3, capacity_mw=(200, 1500)).to_file(src["thermal_discharge"])
+    _coastal_polys(rng, 6).to_file(src["reclamation"])
+    _coastal_points(rng, 5).to_file(src["dredging_sediment"])
+    _coastal_points(rng, 6, population_served=(20_000, 900_000)).to_file(src["wastewater_nutrients"])
+    _points(rng, 3, (38.9, 39.1), (21.3, 21.6)).to_file(src["oil_spill_risk"])
+    _coastal_points(rng, 12, boats=(5, 120)).to_file(src["fishing_artisanal"])
+    _coastal_points(rng, 3, production_t_year=(500, 8000)).to_file(src["aquaculture"])
+    _coastal_points(rng, 15, visitors_year=(1_000, 80_000)).to_file(src["tourism_diving"])
     lane = lambda lon, lat: 1000 * np.exp(-((lon - 38.75) / 0.06) ** 2) + rng.gamma(1, 5, lon.shape)
-    _write_4326(pr / "ais_density.tif", lane, 0.01)
-    _write_4326(pr / "ais_speed_weighted_density.tif", lambda lo, la: 15 * lane(lo, la), 0.01)
-    _write_4326(pr / "gfw_fishing_effort.tif",
+    _write_4326(src["shipping_noise"], lane, 0.01)
+    _write_4326(src["ship_strike"], lambda lo, la: 15 * lane(lo, la), 0.01)
+    _write_4326(src["fishing_commercial"],
                 lambda lo, la: ndimage.gaussian_filter(rng.gamma(0.5, 10, lo.shape), 2), 0.01)
-    _write_4326(pr / "viirs_annual.tif",
+    _write_4326(src["light_pollution"],
                 lambda lo, la: 60 * np.exp(-np.abs(lo - _coast_lon(la)) / 0.03) * (1 + (np.abs(la - 21.5) < 0.15) * 3), 0.005)
 
     # climate
-    cl = raw / "climate"
-    _write_4326(cl / "crw_dhw4_frequency.tif", lambda lo, la: 0.2 + 0.4 * (LAT1 - la) + 0.05 * rng.random(lo.shape))
-    bo = cl / "bio_oracle"
+    _write_4326(src["marine_heatwaves"], lambda lo, la: 0.2 + 0.4 * (LAT1 - la) + 0.05 * rng.random(lo.shape))
+    bo = root / pdoc["bio_oracle"]["raw_dir"]
     base = {
         "thetao_max": lambda lo, la: 31.0 + 0.8 * (LAT1 - la) - 0.3 * (COAST_LON - lo),
         "ph_mean": lambda lo, la: 8.10 - 0.01 * (LAT1 - la),
@@ -152,15 +159,13 @@ def build_demo(root: Path, repo_root: Path, seed: int = 42) -> None:
                 _write_4326(bo / f"{v}_{ssp}_{hz}.tif", shifted(f, ch[v] * k))
 
     # planned developments
-    dev = raw / "scenarios" / "development"
-    dev.mkdir(parents=True, exist_ok=True)
-    _coastal_points(rng, 2, capacity_m3_day=(300_000, 1_000_000)).to_file(dev / "desalination_planned.gpkg")
-    _coastal_points(rng, 1, capacity_mw=(800, 2000)).to_file(dev / "thermal_planned.gpkg")
-    _coastal_polys(rng, 3, size=0.04).to_file(dev / "reclamation_planned.gpkg")
-    _coastal_points(rng, 3).to_file(dev / "dredging_planned.gpkg")
-    _coastal_points(rng, 2, population_served=(100_000, 400_000)).to_file(dev / "wastewater_planned.gpkg")
-    _coastal_points(rng, 6, visitors_year=(20_000, 150_000)).to_file(dev / "tourism_planned.gpkg")
-    _coastal_points(rng, 1, production_t_year=(2000, 6000)).to_file(dev / "aquaculture_planned.gpkg")
+    _coastal_points(rng, 2, capacity_m3_day=(300_000, 1_000_000)).to_file(dev["desal_brine"])
+    _coastal_points(rng, 1, capacity_mw=(800, 2000)).to_file(dev["thermal_discharge"])
+    _coastal_polys(rng, 3, size=0.04).to_file(dev["reclamation"])
+    _coastal_points(rng, 3).to_file(dev["dredging_sediment"])
+    _coastal_points(rng, 2, population_served=(100_000, 400_000)).to_file(dev["wastewater_nutrients"])
+    _coastal_points(rng, 6, visitors_year=(20_000, 150_000)).to_file(dev["tourism_diving"])
+    _coastal_points(rng, 1, production_t_year=(2000, 6000)).to_file(dev["aquaculture"])
     # light_planned.tif deliberately left out to show how missing inputs are reported
 
 
@@ -203,15 +208,14 @@ def build_demo_components(cfg, grid, seed: int = 7) -> None:
         "spawning_aggregations": band(1, 15) * patches(1, 0.88),
         "pelagic_productive": (dist_km > 0) * (0.3 + 0.7 * patches(8, 0.0)),
     }
-    out = cfg.path(cfg.project["paths"]["components_dir"])
     for k, v in layers.items():
-        grid.write(out / f"{k}.tif", np.clip(v, 0, 1).astype("float32"))
+        grid.write(cfg.component_file(k), np.clip(v, 0, 1).astype("float32"))
 
 
 def build_demo_surveys(cfg, grid, seed: int = 3) -> None:
     """100 synthetic survey sites; coral condition loosely tied to baseline impact plus noise."""
     rng = np.random.default_rng(seed)
-    coral = grid.read(cfg.path(cfg.project["paths"]["components_dir"]) / "coral_shallow.tif", "nearest")
+    coral = grid.read(cfg.component_file("coral_shallow"), "nearest")
     impact = grid.read(cfg.outputs_dir / "S0_baseline" / "impact_total.tif", "nearest")
     r, c = np.nonzero(coral > 0.2)
     pick = rng.choice(len(r), size=min(100, len(r)), replace=False)
@@ -242,16 +246,16 @@ def build_demo_surveys(cfg, grid, seed: int = 3) -> None:
 def build_demo_application(cfg) -> Path:
     """A synthetic permit application: one desalination plant plus a small resort."""
     rng = np.random.default_rng(11)
-    d = cfg.root / "data" / "applications" / "DEMO-APP-001"
+    d = cfg.root / "data" / "interim" / "scenarios" / "applications" / "DEMO-APP-001"
     d.mkdir(parents=True, exist_ok=True)
     _coastal_points(rng, 1, capacity_m3_day=(400_000, 400_001)).to_file(d / "desal_plant.gpkg")
     _coastal_points(rng, 1, visitors_year=(60_000, 60_001)).to_file(d / "resort.gpkg")
     proj = {
         "id": "DEMO-APP-001", "name": "Synthetic desalination plant and resort", "applicant": "Demo applicant",
         "changes": [
-            {"pressure": "desal_brine", "mode": "add_sources", "file": "data/applications/DEMO-APP-001/desal_plant.gpkg"},
-            {"pressure": "chemical_discharge", "mode": "add_sources", "file": "data/applications/DEMO-APP-001/desal_plant.gpkg"},
-            {"pressure": "tourism_diving", "mode": "add_sources", "file": "data/applications/DEMO-APP-001/resort.gpkg"},
+            {"pressure": "desal_brine", "mode": "add_sources", "file": "data/interim/scenarios/applications/DEMO-APP-001/desal_plant.gpkg"},
+            {"pressure": "chemical_discharge", "mode": "add_sources", "file": "data/interim/scenarios/applications/DEMO-APP-001/desal_plant.gpkg"},
+            {"pressure": "tourism_diving", "mode": "add_sources", "file": "data/interim/scenarios/applications/DEMO-APP-001/resort.gpkg"},
         ],
     }
     f = d / "project.yaml"

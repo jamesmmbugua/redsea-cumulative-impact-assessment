@@ -1,7 +1,8 @@
 # Data sources
 
 Starting list. Record the actual file, date and licence for each layer in
-`config/data_catalogue.csv`.
+`config/data_catalogue.csv`, which also gives each layer's theme and folders. How the folders
+are organised is described in `docs/data_management.md`.
 
 ## Boundaries and base layers
 

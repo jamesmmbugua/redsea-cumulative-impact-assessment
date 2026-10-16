@@ -57,6 +57,20 @@ class Config:
     def outputs_dir(self) -> Path:
         return self.path(self.project["paths"]["outputs_dir"])
 
+    # ---- thematic folders --------------------------------------------
+    def theme_labels(self, kind: str) -> dict[str, str]:
+        """Theme code -> label for 'components', 'pressures' or 'reference'."""
+        return dict((self.project.get("themes") or {}).get(kind) or {})
+
+    def component_file(self, cid: str) -> Path:
+        """Model-ready raster of a component: <components_dir>/<group>/<id>.tif."""
+        c = self.component(cid)
+        return self.path(self.project["paths"]["components_dir"]) / c["group"] / f"{cid}.tif"
+
+    def pressure_dir(self, pid: str) -> Path:
+        """Folder of a prepared pressure: <pressures_dir>/<theme>/."""
+        return self.path(self.project["paths"]["pressures_dir"]) / self.pressure(pid)["theme"]
+
 
 def _read_yaml(path: Path) -> dict:
     with open(path, encoding="utf-8") as f:
@@ -144,6 +158,17 @@ def _validate(cfg: Config) -> None:
     if cfg.sensitivity_confidence is None:
         cfg.warnings.append("No sensitivity confidence file; confidence set to 1 (low)")
         cfg.sensitivity_confidence = (s > 0).astype(int)
+
+    comp_themes = cfg.theme_labels("components")
+    pres_themes = cfg.theme_labels("pressures")
+    for c in cfg.components:
+        if c.get("group") not in comp_themes:
+            errors.append(f"Component {c['id']}: group '{c.get('group')}' is not listed in "
+                          f"themes.components in project.yaml")
+    for p in cfg.pressures:
+        if p.get("theme") not in pres_themes:
+            errors.append(f"Pressure {p['id']}: theme '{p.get('theme')}' is not listed in "
+                          f"themes.pressures in project.yaml")
 
     for p in cfg.pressures:
         m = p.get("method")

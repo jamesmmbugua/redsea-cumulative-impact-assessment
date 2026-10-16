@@ -11,12 +11,13 @@ scientific lead). Phases 2 and 3 overlap.
 
 ## Phase 1: Grid and data acquisition (weeks 2 to 6)
 
+- Create the thematic data folders on shared storage (`rscia init-data`, see `docs/data_management.md`)
 - Download EEZ boundary, build the 1 km grid (`rscia build-grid`)
 - Request national data early: desalination plants and capacities, ports, planned
   developments, protected areas, fisheries landing sites
 - Download open data (see `docs/data_sources.md`)
 - Fill in `config/data_catalogue.csv` as each layer arrives
-- Load the 100 coral survey sites into `data/surveys/coral_surveys.csv`
+- Load the 100 coral survey sites into `data/interim/reference/surveys/coral_surveys.csv`
 
 **Milestone M1:** all available raw layers catalogued, gaps listed.
 

@@ -7,7 +7,7 @@ named like:
     thetao_ssp245_2020_2100_depthsurf.nc     (decadal time steps 2020 to 2090)
 
 This script reads every such file in an input folder, clips it to the Red Sea, picks the
-right time step, and writes GeoTIFFs to data/raw/climate/bio_oracle/ named
+right time step, and writes GeoTIFFs to data/interim/reference/bio_oracle/ named
 
     {variable}_baseline.tif
     {variable}_{ssp}_{horizon}.tif         horizon 2050 = decade 2040s, 2100 = decade 2090s
@@ -16,8 +16,10 @@ where {variable} is the statistic inside the file, for example thetao_max, ph_me
 o2_mean, so_mean (as listed in config/pressures.yaml). GeoTIFFs already exported from
 Bio-ORACLE can be used too: just name them by the same rule.
 
+Keep the downloaded NetCDF files unchanged in data/raw/reference/bio_oracle/.
+
 Usage:
-    python scripts/import_bio_oracle.py path/to/bio_oracle_folder [--depth depthsurf]
+    python scripts/import_bio_oracle.py data/raw/reference/bio_oracle [--depth depthsurf]
 """
 import argparse
 import re
@@ -30,7 +32,7 @@ from rasterio.transform import from_bounds
 
 BBOX = dict(lon=(32.0, 44.5), lat=(12.0, 30.5))
 HORIZON_YEAR = {"2050": 2040, "2100": 2090}
-OUT = Path("data/raw/climate/bio_oracle")
+OUT = Path("data/interim/reference/bio_oracle")
 NAME = re.compile(r"^(?P<var>[a-z0-9]+)_(?P<scen>baseline|ssp\d{3})_(?P<y0>\d{4})_(?P<y1>\d{4})_(?P<depth>depth\w+)")
 
 

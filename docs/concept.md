@@ -27,27 +27,28 @@ Two uses:
 ## 3. Ecosystem components (21)
 
 Each component is a 0 to 1 raster of presence (habitats) or relative importance (species).
+The group is also the component's data folder (see `docs/data_management.md`).
 
 | ID | Component | Group |
 |---|---|---|
-| coral_shallow | Shallow coral reef (0 to 30 m) | Benthic |
-| coral_mesophotic | Mesophotic coral (30 to 150 m) | Benthic |
-| seagrass | Seagrass beds | Benthic |
-| mangrove | Mangroves | Benthic |
-| intertidal_flats | Intertidal flats | Benthic |
-| soft_sediment | Subtidal soft sediment | Benthic |
-| hard_substrate | Non-reef hard substrate | Benthic |
-| deep_sea | Deep-sea habitats (below 200 m) | Benthic |
-| dugong | Dugong | Megafauna |
-| green_turtle | Green turtle (foraging) | Megafauna |
-| hawksbill_turtle | Hawksbill turtle (foraging) | Megafauna |
-| turtle_nesting | Turtle nesting beaches | Megafauna |
-| whale_shark | Whale shark | Megafauna |
-| manta_mobula | Manta and mobula rays | Megafauna |
-| dolphins | Dolphins (coastal and oceanic) | Megafauna |
-| other_cetaceans | Other cetaceans | Megafauna |
-| seabird_breeding | Seabird breeding islands | Birds |
-| seabird_foraging | Seabird foraging areas | Birds |
+| coral_shallow | Shallow coral reef (0 to 30 m) | Benthic habitats |
+| coral_mesophotic | Mesophotic coral (30 to 150 m) | Benthic habitats |
+| seagrass | Seagrass beds | Benthic habitats |
+| mangrove | Mangroves | Benthic habitats |
+| intertidal_flats | Intertidal flats | Benthic habitats |
+| soft_sediment | Subtidal soft sediment | Benthic habitats |
+| hard_substrate | Non-reef hard substrate | Benthic habitats |
+| deep_sea | Deep-sea habitats (below 200 m) | Benthic habitats |
+| dugong | Dugong | Marine mammals |
+| green_turtle | Green turtle (foraging) | Marine turtles |
+| hawksbill_turtle | Hawksbill turtle (foraging) | Marine turtles |
+| turtle_nesting | Turtle nesting beaches | Marine turtles |
+| whale_shark | Whale shark | Sharks and rays |
+| manta_mobula | Manta and mobula rays | Sharks and rays |
+| dolphins | Dolphins (coastal and oceanic) | Marine mammals |
+| other_cetaceans | Other cetaceans | Marine mammals |
+| seabird_breeding | Seabird breeding islands | Seabirds |
+| seabird_foraging | Seabird foraging areas | Seabirds |
 | reef_fish | Reef fish assemblages | Fish |
 | spawning_aggregations | Fish spawning aggregation sites | Fish |
 | pelagic_productive | Productive pelagic waters | Pelagic |

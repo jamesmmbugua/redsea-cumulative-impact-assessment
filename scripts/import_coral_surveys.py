@@ -3,7 +3,7 @@
 Usage:
     python scripts/import_coral_surveys.py surveys.xlsx --map site=Site lat=Lat lon=Long \
         coral=HardCoral_pct
-Standard columns (see data/surveys/coral_surveys_template.csv):
+Standard columns (see config/templates/coral_surveys_template.csv):
     site_id, latitude, longitude, survey_date, depth_m, live_coral_cover_pct,
     recent_mortality_pct, bleaching_pct, macroalgae_cover_pct, coral_genera_richness,
     fish_biomass_kg_ha, notes
@@ -23,7 +23,7 @@ STD = ["site_id", "latitude", "longitude", "survey_date", "depth_m", "live_coral
 SHORT = dict(site="site_id", lat="latitude", lon="longitude", date="survey_date", depth="depth_m",
              coral="live_coral_cover_pct", mortality="recent_mortality_pct", bleaching="bleaching_pct",
              algae="macroalgae_cover_pct", richness="coral_genera_richness", fish="fish_biomass_kg_ha")
-OUT = Path("data/surveys/coral_surveys.csv")
+OUT = Path("data/interim/reference/surveys/coral_surveys.csv")
 
 
 def to_decimal(v):

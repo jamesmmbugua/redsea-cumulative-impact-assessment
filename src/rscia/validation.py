@@ -25,7 +25,7 @@ EXPECTED = {
 def load_surveys(cfg: Config, grid: Grid) -> pd.DataFrame:
     f = cfg.path(cfg.project["paths"]["surveys_file"])
     if not f.exists():
-        raise FileNotFoundError(f"Survey file not found: {f} (see data/surveys/coral_surveys_template.csv)")
+        raise FileNotFoundError(f"Survey file not found: {f} (see config/templates/coral_surveys_template.csv)")
     df = pd.read_csv(f)
     for col in ("site_id", "latitude", "longitude"):
         if col not in df.columns:
@@ -58,8 +58,7 @@ def validate(cfg: Config, grid: Grid, run_id: str = "S0_baseline") -> pd.DataFra
     df = pd.concat([df, byp], axis=1)
 
     # coral layer ground truth
-    comp_dir = cfg.path(cfg.project["paths"]["components_dir"])
-    coral_f = comp_dir / "coral_shallow.tif"
+    coral_f = cfg.component_file("coral_shallow")
     if coral_f.exists():
         df["coral_layer_value"] = grid.read(coral_f, "nearest")[df.row.clip(0, grid.height - 1), df.col.clip(0, grid.width - 1)]
         df.loc[~df.in_grid, "coral_layer_value"] = np.nan
