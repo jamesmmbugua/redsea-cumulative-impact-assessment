@@ -5,7 +5,10 @@
 #   density        an existing density raster (AIS, fishing effort) resampled to the grid
 #   direct         an existing raster used as is (night lights, heatwave frequency)
 #   climate_delta  change between Bio-ORACLE present and future layers
-# sources: raw input relative to the repository root
+# theme: thematic group (see themes.pressures in project.yaml). It sets the folder at every
+#   data stage: original files in data/raw/pressures/<theme>/<source>/, cleaned model inputs
+#   in data/interim/pressures/<theme>/, prepared rasters in data/processed/pressures/<theme>/.
+# sources: cleaned model input (data/interim/...), relative to the repository root
 # weight_field: attribute giving the size of each source (capacity, production)
 # log_transform: apply log1p before normalization (for skewed layers)
 # kind: local (managed in Saudi waters) or climate
@@ -13,131 +16,147 @@
 pressures:
   - id: desal_brine
     name: Hypersaline brine
+    theme: discharges
     kind: local
     method: decay
-    sources: data/raw/pressures/desalination_plants.gpkg
+    sources: data/interim/pressures/discharges/desalination_plants.gpkg
     weight_field: capacity_m3_day
     decay_km: 5
     log_transform: true
 
   - id: thermal_discharge
     name: Thermal discharge
+    theme: discharges
     kind: local
     method: decay
-    sources: data/raw/pressures/thermal_outfalls.gpkg
+    sources: data/interim/pressures/discharges/thermal_outfalls.gpkg
     weight_field: capacity_mw
     decay_km: 3
     log_transform: true
 
   - id: chemical_discharge
     name: Antiscalants, chlorine and metals
+    theme: discharges
     kind: local
     method: decay
-    sources: data/raw/pressures/desalination_plants.gpkg
+    sources: data/interim/pressures/discharges/desalination_plants.gpkg
     weight_field: capacity_m3_day
     decay_km: 4
     log_transform: true
 
   - id: reclamation
     name: Reclamation and habitat loss
+    theme: coastal_development
     kind: local
     method: footprint
-    sources: data/raw/pressures/reclamation.gpkg
+    sources: data/interim/pressures/coastal_development/reclamation.gpkg
     decay_km: 0
     log_transform: false
 
   - id: dredging_sediment
     name: Dredging and sedimentation
+    theme: coastal_development
     kind: local
     method: decay
-    sources: data/raw/pressures/dredging_sites.gpkg
+    sources: data/interim/pressures/coastal_development/dredging_sites.gpkg
     weight_field: null
     decay_km: 5
     log_transform: false
 
   - id: wastewater_nutrients
     name: Wastewater and nutrients
+    theme: discharges
     kind: local
     method: decay
-    sources: data/raw/pressures/wastewater_outfalls.gpkg
+    sources: data/interim/pressures/discharges/wastewater_outfalls.gpkg
     weight_field: population_served
     decay_km: 5
     log_transform: true
 
   - id: shipping_noise
     name: Underwater noise from shipping
+    theme: maritime_transport
     kind: local
     method: density
-    sources: data/raw/pressures/ais_density.tif
+    sources: data/interim/pressures/maritime_transport/ais_density.tif
     log_transform: true
 
   - id: ship_strike
     name: Vessel collision risk
+    theme: maritime_transport
     kind: local
     method: density
-    sources: data/raw/pressures/ais_speed_weighted_density.tif
+    sources: data/interim/pressures/maritime_transport/ais_speed_weighted_density.tif
     log_transform: true
 
   - id: oil_spill_risk
     name: Oil spill risk
+    theme: maritime_transport
     kind: local
     method: decay
-    sources: data/raw/pressures/oil_infrastructure.gpkg
+    sources: data/interim/pressures/maritime_transport/oil_infrastructure.gpkg
     weight_field: null
     decay_km: 20
     log_transform: false
 
   - id: fishing_commercial
     name: Commercial fishing
+    theme: fisheries_aquaculture
     kind: local
     method: density
-    sources: data/raw/pressures/gfw_fishing_effort.tif
+    sources: data/interim/pressures/fisheries_aquaculture/gfw_fishing_effort.tif
     log_transform: true
 
   - id: fishing_artisanal
     name: Artisanal fishing
+    theme: fisheries_aquaculture
     kind: local
     method: decay
-    sources: data/raw/pressures/landing_sites.gpkg
+    sources: data/interim/pressures/fisheries_aquaculture/landing_sites.gpkg
     weight_field: boats
     decay_km: 10
     log_transform: true
 
   - id: aquaculture
     name: Aquaculture effluent
+    theme: fisheries_aquaculture
     kind: local
     method: decay
-    sources: data/raw/pressures/aquaculture_farms.gpkg
+    sources: data/interim/pressures/fisheries_aquaculture/aquaculture_farms.gpkg
     weight_field: production_t_year
     decay_km: 3
     log_transform: true
 
   - id: tourism_diving
     name: Tourism and diving
+    theme: tourism
     kind: local
     method: decay
-    sources: data/raw/pressures/tourism_sites.gpkg
+    sources: data/interim/pressures/tourism/tourism_sites.gpkg
     weight_field: visitors_year
     decay_km: 2
     log_transform: true
 
   - id: light_pollution
     name: Artificial light at night
+    theme: coastal_development
     kind: local
     method: direct
-    sources: data/raw/pressures/viirs_annual.tif
+    sources: data/interim/pressures/coastal_development/viirs_annual.tif
     log_transform: true
 
   - id: marine_heatwaves
     name: Marine heatwaves
+    theme: climate
     kind: climate
     method: direct
     # Frequency of DHW >= 4 from NOAA Coral Reef Watch over the baseline period
-    sources: data/raw/climate/crw_dhw4_frequency.tif
+    sources: data/interim/pressures/climate/crw_dhw4_frequency.tif
     log_transform: false
 
   - id: warming
     name: Long-term warming
+    theme: climate
     kind: climate
     method: climate_delta
     variable: thetao_max
@@ -146,6 +165,7 @@ pressures:
 
   - id: acidification
     name: Ocean acidification
+    theme: climate
     kind: climate
     method: climate_delta
     variable: ph_mean
@@ -154,6 +174,7 @@ pressures:
 
   - id: deoxygenation
     name: Oxygen loss
+    theme: climate
     kind: climate
     method: climate_delta
     variable: o2_mean
@@ -162,17 +183,19 @@ pressures:
 
   - id: salinity_change
     name: Salinity change
+    theme: climate
     kind: climate
     method: climate_delta
     variable: so_mean
     direction: absolute
     log_transform: false
 
-# Bio-ORACLE file naming. Files are resampled to the grid by `rscia climate`.
+# Bio-ORACLE GeoTIFFs written by scripts/import_bio_oracle.py from the original NetCDF files
+# in data/raw/reference/bio_oracle/. Files are resampled to the grid by `rscia prepare`.
 # {variable}, {ssp}, {horizon} are filled in per scenario. Check the variable names
 # against the Bio-ORACLE v3 ERDDAP datasets when downloading.
 bio_oracle:
-  raw_dir: data/raw/climate/bio_oracle
+  raw_dir: data/interim/reference/bio_oracle
   present_pattern: "{variable}_baseline.tif"
   future_pattern: "{variable}_{ssp}_{horizon}.tif"
   # Present-day climate deltas are zero by definition. The worst projected change

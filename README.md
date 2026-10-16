@@ -44,13 +44,14 @@ config/            All model settings (edit these, not the code)
   sensitivity_matrix.csv       Scores (pressure rows x component columns)
   sensitivity_confidence.csv   Confidence per score (1 low, 2 medium, 3 high)
   scenarios.yaml
-  data_catalogue.csv           One row per input layer: source, status, owner
-data/
-  raw/             Downloaded data, untouched
-  interim/         Reprojected and clipped data
-  processed/       Model-ready 1 km rasters (components/, pressures/, scenarios/)
-  surveys/         Coral reef survey data
-docs/              Concept, project plan, data sources
+  data_catalogue.csv           One row per input layer: theme, folders, source, status
+  templates/                   Coral survey template
+data/              Same thematic folders at every stage (see docs/data_management.md)
+  raw/             Original files as received: reference/, components/<theme>/<source>/,
+                   pressures/<theme>/<source>/, scenarios/
+  interim/         Cleaned model inputs (clipped, reprojected, standard attributes)
+  processed/       Model-ready 1 km rasters: grid/, components/<theme>/, pressures/<theme>/
+docs/              Concept, project plan, data sources, data management
 src/rscia/         Python engine
 tests/             Automated tests (run with pytest)
 outputs/           Model results (created on first run)
@@ -79,11 +80,19 @@ rscia screen --project config/applications/example_application.yaml   # screen a
 
 ## Loading data
 
+Data are organised by theme at three stages (raw, interim, processed); see
+`docs/data_management.md`. Components are grouped as benthic habitats, marine turtles, marine
+mammals, sharks and rays, seabirds, fish and pelagic; pressures as coastal development,
+discharges, maritime transport, fisheries and aquaculture, tourism and climate.
+
 ```bash
+rscia init-data                                        # create the thematic folder tree
+rscia init-data --data-root /path/to/shared/rscia      # ... or on the team's shared drive
 python scripts/download_eez.py                         # Saudi Red Sea EEZ from Marine Regions
 python scripts/build_regions.py --split-lat <deg N>    # Northern, Central, Southern regions from MEOW
-python scripts/import_bio_oracle.py path/to/bio_oracle  # Bio-ORACLE v3 NetCDF to model GeoTIFFs
+python scripts/import_bio_oracle.py data/raw/reference/bio_oracle   # Bio-ORACLE v3 NetCDF to GeoTIFFs
 python scripts/import_coral_surveys.py surveys.xlsx --map site=Site lat=Lat lon=Lon coral=HC
+rscia check                                            # what is present and missing, by theme
 ```
 
 ## Regions, rarity and the 0 to 100 scale
@@ -111,8 +120,10 @@ Screen alternative designs as separate project files and compare the reports.
 
 ## Adding a planned project to the development scenario
 
-1. Add the feature to the matching file in `data/raw/scenarios/development/`, for example a
-   new desalination plant as a point in `desalination_planned.gpkg` with `capacity_m3_day`.
+1. Keep the planning documents in `data/raw/scenarios/development/<pressure theme>/`, and add the
+   feature to the matching file in `data/interim/scenarios/development/<pressure theme>/`, for
+   example a new desalination plant as a point in `discharges/desalination_planned.gpkg` with
+   `capacity_m3_day`.
    Use the same attribute names as the baseline source file.
 2. If the project creates a pressure not yet listed, add a line under `planned_development`
    in `config/scenarios.yaml`.
@@ -130,7 +141,7 @@ Screen alternative designs as separate project files and compare the reports.
 | confidence.tif | Impact-weighted confidence, 1 low to 3 high |
 | hotspots.tif | Top 10 percent of cells |
 | component_count.tif | Number of components present |
-| summary_by_*.csv | Totals and shares by pressure, component, group, region, planning unit |
+| summary_by_*.csv | Totals and shares by pressure, pressure theme, component, component group, region, planning unit |
 | run_info.json | Run settings and any missing inputs |
 
 Comparisons against the baseline are in `outputs/comparisons/`, quick-look maps in

@@ -29,6 +29,20 @@ def cmd_check(args):
     with pd.option_context("display.max_rows", None, "display.width", 200, "display.max_colwidth", 80):
         print(df.to_string(index=False))
     print(f"\n{int(df.exists.sum())} of {len(df)} inputs present.")
+    by_theme = df[df.theme != ""].groupby(["type", "theme"]).exists.agg(["sum", "count"])
+    print("\nBy theme (present / expected):")
+    for (t, th), r in by_theme.iterrows():
+        print(f"  {t:<10} {th:<24} {int(r['sum'])} / {int(r['count'])}")
+    from .datatree import catalogue_problems
+    for msg in catalogue_problems(_cfg(args)):
+        print("Catalogue:", msg)
+
+
+def cmd_init_data(args):
+    from .datatree import init_data
+    res = init_data(_cfg(args), Path(args.data_root) if args.data_root else None)
+    print(f"Folder tree ready under {res['root']}: {res['folders_created']} folders and "
+          f"{res['source_notes_created']} SOURCE.md notes created (existing files untouched).")
 
 
 def cmd_prepare(args):
@@ -141,7 +155,10 @@ def main(argv=None):
     sub = ap.add_subparsers(dest="cmd", required=True)
 
     sub.add_parser("build-grid", help="build the 1 km grid from the EEZ").set_defaults(fn=cmd_build_grid)
-    sub.add_parser("check", help="list present and missing inputs").set_defaults(fn=cmd_check)
+    p = sub.add_parser("init-data", help="create the thematic data folder tree (raw, interim, processed)")
+    p.add_argument("--data-root", help="create the tree here instead of the repository (e.g. a shared drive)")
+    p.set_defaults(fn=cmd_init_data)
+    sub.add_parser("check", help="list present and missing inputs, by theme").set_defaults(fn=cmd_check)
     sub.add_parser("prepare", help="build baseline pressure and climate layers").set_defaults(fn=cmd_prepare)
     p = sub.add_parser("run", help="run one scenario run")
     p.add_argument("--scenario", default="S0_baseline")

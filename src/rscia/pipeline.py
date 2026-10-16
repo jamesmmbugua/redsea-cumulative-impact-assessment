@@ -197,9 +197,10 @@ def prepare_pressures(cfg: Config, grid: Grid | None = None) -> dict:
         if p["method"] == "climate_delta":
             continue
         raw = raw_pressure(cfg, grid, p, missing=missing)
-        grid.write(out / "raw" / f"{p['id']}.tif", raw)
+        tdir = cfg.pressure_dir(p["id"])
+        grid.write(tdir / "intensity" / f"{p['id']}.tif", raw)
         n, ref = layers.normalize(raw, None, norm["reference_percentile"], p.get("log_transform", False), norm.get("clip_max", 1.0))
-        grid.write(out / f"{p['id']}.tif", n)
+        grid.write(tdir / f"{p['id']}.tif", n)
         refs[p["id"]] = ref
 
     # climate deltas for every future used by a scenario
@@ -222,7 +223,7 @@ def prepare_pressures(cfg: Config, grid: Grid | None = None) -> dict:
             d = layers.climate_delta(present, grid.read(fp, resampling="bilinear", fill=None), p["direction"])
             d[np.isnan(d) & grid.mask] = 0
             deltas[(ssp, hz)] = d
-            grid.write(out / "climate" / "raw" / f"{p['id']}_{ssp}_{hz}.tif", d)
+            grid.write(cfg.pressure_dir(p["id"]) / "intensity" / f"{p['id']}_{ssp}_{hz}.tif", d)
         if not deltas:
             continue
         key = (ref_f["ssp"], str(ref_f["horizon"])) if ref_f else None
@@ -233,7 +234,7 @@ def prepare_pressures(cfg: Config, grid: Grid | None = None) -> dict:
         refs[p["id"]] = ref
         for (ssp, hz), d in deltas.items():
             n, _ = layers.normalize(d, ref, log_transform=p.get("log_transform", False), clip_max=norm.get("clip_max", 1.0))
-            grid.write(out / "climate" / f"{p['id']}_{ssp}_{hz}.tif", n)
+            grid.write(cfg.pressure_dir(p["id"]) / f"{p['id']}_{ssp}_{hz}.tif", n)
 
     (out / "references.json").write_text(json.dumps({"references": refs, "missing_inputs": sorted(set(missing))}, indent=2))
     for m in sorted(set(missing)):
@@ -244,10 +245,9 @@ def prepare_pressures(cfg: Config, grid: Grid | None = None) -> dict:
 # ---------------------------------------------------------------- run
 
 def load_components(cfg: Config, grid: Grid, missing: list) -> dict[str, np.ndarray]:
-    d = cfg.path(cfg.project["paths"]["components_dir"])
     out = {}
     for c in cfg.components:
-        f = d / f"{c['id']}.tif"
+        f = cfg.component_file(c["id"])
         if f.exists():
             a = grid.read(f, resampling="bilinear")
             out[c["id"]] = np.clip(a, 0, 1)
@@ -277,7 +277,7 @@ def scenario_pressures(cfg: Config, grid: Grid, run: RunSpec, missing: list) -> 
             if run.ssp is None:
                 P[pid] = grid.empty()  # present climate: no change
             else:
-                f = out_dir / "climate" / f"{pid}_{run.ssp}_{run.horizon}.tif"
+                f = cfg.pressure_dir(pid) / f"{pid}_{run.ssp}_{run.horizon}.tif"
                 if f.exists():
                     P[pid] = grid.read(f, resampling="nearest")
                 else:
@@ -285,13 +285,13 @@ def scenario_pressures(cfg: Config, grid: Grid, run: RunSpec, missing: list) -> 
                     P[pid] = grid.empty()
             continue
 
-        base_norm = out_dir / f"{pid}.tif"
+        base_norm = cfg.pressure_dir(pid) / f"{pid}.tif"
         if pid not in changes:
             P[pid] = grid.read(base_norm, resampling="nearest") if base_norm.exists() else grid.empty()
             continue
 
         # apply development changes on raw intensity, then normalize with baseline reference
-        raw_f = out_dir / "raw" / f"{pid}.tif"
+        raw_f = cfg.pressure_dir(pid) / "intensity" / f"{pid}.tif"
         raw = grid.read(raw_f, resampling="nearest") if raw_f.exists() else grid.empty()
         raw_base = raw.copy()
         add_sources = [cfg.path(c["file"]) for c in changes[pid] if c["mode"] == "add_sources"]

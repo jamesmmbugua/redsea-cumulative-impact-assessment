@@ -9,7 +9,7 @@ at a chosen latitude:
     Southern Red Sea = Southern Red Sea
 
 The regions are clipped to the study area (EEZ plus the coastal strip) and written to
-data/raw/boundaries/regions.gpkg with a `region` field (northern, central, southern).
+data/interim/reference/boundaries/regions.gpkg with a `region` field (northern, central, southern).
 
 Usage (from the repository root):
     python scripts/build_regions.py [--meow path/to/meow_ecos.shp] [--split-lat 23.5]

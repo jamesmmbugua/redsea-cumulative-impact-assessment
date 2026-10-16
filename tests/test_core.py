@@ -157,3 +157,59 @@ def test_symphony_export_format(tmp_path):
     assert titles == {r[0] for r in rows[1:]}   # Title must match matrix row names
     reg = pd.read_csv(out / "outputs" / "S0_baseline" / "summary_by_region.csv")
     assert set(reg.region) >= {"Northern Red Sea", "Central Red Sea", "Southern Red Sea"}
+
+
+def test_every_layer_has_a_listed_theme():
+    cfg = load_config(ROOT)
+    comp_themes, pres_themes = cfg.theme_labels("components"), cfg.theme_labels("pressures")
+    assert {c["group"] for c in cfg.components} <= set(comp_themes)
+    assert {p["theme"] for p in cfg.pressures} <= set(pres_themes)
+    turtles = {c["id"] for c in cfg.components if c["group"] == "marine_turtles"}
+    assert turtles == {"green_turtle", "hawksbill_turtle", "turtle_nesting"}
+
+
+def test_themed_paths():
+    cfg = load_config(ROOT)
+    assert cfg.component_file("dugong").relative_to(cfg.root).as_posix() == \
+        "data/processed/components/marine_mammals/dugong.tif"
+    assert cfg.pressure_dir("desal_brine").relative_to(cfg.root).as_posix() == \
+        "data/processed/pressures/discharges"
+    for p in cfg.pressures:
+        if p.get("sources"):
+            assert p["sources"].startswith(f"data/interim/pressures/{p['theme']}/")
+
+
+def test_unlisted_theme_is_rejected(tmp_path):
+    import shutil
+    import yaml
+    shutil.copytree(ROOT / "config", tmp_path / "config")
+    f = tmp_path / "config" / "ecosystem_components.yaml"
+    doc = yaml.safe_load(f.read_text())
+    doc["components"][0]["group"] = "megafauna"
+    f.write_text(yaml.safe_dump(doc))
+    with pytest.raises(ValueError, match="not listed in themes.components"):
+        load_config(tmp_path)
+
+
+def test_catalogue_matches_config():
+    from rscia.datatree import catalogue, catalogue_problems
+    cfg = load_config(ROOT)
+    assert catalogue_problems(cfg) == []
+    themes = set()
+    for kind in ("reference", "components", "pressures"):
+        themes |= set(cfg.theme_labels(kind))
+    rows = catalogue(cfg)
+    assert all(r["theme"] in themes for r in rows)
+    assert len({r["layer_id"] for r in rows}) == len(rows)
+
+
+def test_init_data_creates_tree(tmp_path):
+    from rscia.datatree import init_data
+    cfg = load_config(ROOT)
+    res = init_data(cfg, tmp_path)
+    assert (tmp_path / "data/raw/components/marine_turtles/nesting_surveys/SOURCE.md").exists()
+    assert (tmp_path / "data/interim/pressures/discharges").is_dir()
+    assert (tmp_path / "data/processed/components/sharks_rays").is_dir()
+    assert res["folders_created"] > 0
+    again = init_data(cfg, tmp_path)   # idempotent, never overwrites
+    assert again == {"folders_created": 0, "source_notes_created": 0, "root": str(tmp_path)}

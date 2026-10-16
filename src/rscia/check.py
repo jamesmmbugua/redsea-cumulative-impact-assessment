@@ -11,10 +11,9 @@ def check_inputs(cfg: Config) -> pd.DataFrame:
     rows = []
     grid_t = cfg.path(cfg.project["grid"]["template_raster"])
     rows.append({"type": "grid", "id": "template", "file": str(grid_t), "exists": grid_t.exists()})
-    cdir = cfg.path(cfg.project["paths"]["components_dir"])
     for c in cfg.components:
-        f = cdir / f"{c['id']}.tif"
-        rows.append({"type": "component", "id": c["id"], "file": str(f), "exists": f.exists()})
+        f = cfg.component_file(c["id"])
+        rows.append({"type": "component", "theme": c["group"], "id": c["id"], "file": str(f), "exists": f.exists()})
     for p in cfg.pressures:
         if p["method"] == "climate_delta":
             files = [_bio_oracle_path(cfg, p["variable"])] + [
@@ -22,7 +21,7 @@ def check_inputs(cfg: Config) -> pd.DataFrame:
         else:
             files = [cfg.path(p["sources"])]
         for f in files:
-            rows.append({"type": "pressure", "id": p["id"], "file": str(f), "exists": f.exists()})
+            rows.append({"type": "pressure", "theme": p["theme"], "id": p["id"], "file": str(f), "exists": f.exists()})
     for sc in cfg.scenarios:
         for ch in sc.get("development") or []:
             f = cfg.path(ch["file"])
@@ -30,5 +29,7 @@ def check_inputs(cfg: Config) -> pd.DataFrame:
     s = cfg.path(cfg.project["paths"]["surveys_file"])
     rows.append({"type": "survey", "id": "coral_surveys", "file": str(s), "exists": s.exists()})
     df = pd.DataFrame(rows).drop_duplicates(subset=["type", "file"])
+    df["theme"] = df["theme"].fillna("")
+    df = df[["type", "theme", "id", "file", "exists"]]
     df["file"] = df["file"].str.replace(str(cfg.root) + "/", "", regex=False)
     return df

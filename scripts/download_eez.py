@@ -4,7 +4,7 @@ Run from the repository root (needs internet access):
 
     python scripts/download_eez.py
 
-Writes data/raw/boundaries/eez_v12.gpkg with one polygon: the Saudi EEZ west of 44.5 E
+Writes data/interim/reference/boundaries/eez_v12.gpkg with one polygon: the Saudi EEZ west of 44.5 E
 (Red Sea and Gulf of Aqaba). The Arabian Gulf part lies east of 48 E and is dropped.
 Cite: Flanders Marine Institute (2023), Maritime Boundaries Geodatabase v12.
 """
@@ -19,7 +19,7 @@ WFS = (
     "&CQL_FILTER=sovereign1='Saudi Arabia'"
 )
 RED_SEA_BOX = box(32.0, 12.0, 44.5, 30.5)
-OUT = Path("data/raw/boundaries/eez_v12.gpkg")
+OUT = Path("data/interim/reference/boundaries/eez_v12.gpkg")
 
 
 def main():

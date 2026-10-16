@@ -7,8 +7,8 @@ development changes in config/scenarios.yaml:
     name: Example desalination plant
     applicant: Example Water Company
     changes:
-      - {pressure: desal_brine, mode: add_sources, file: data/applications/APP-2026-014/plant.gpkg}
-      - {pressure: chemical_discharge, mode: add_sources, file: data/applications/APP-2026-014/plant.gpkg}
+      - {pressure: desal_brine, mode: add_sources, file: data/interim/scenarios/applications/APP-2026-014/plant.gpkg}
+      - {pressure: chemical_discharge, mode: add_sources, file: data/interim/scenarios/applications/APP-2026-014/plant.gpkg}
 
 The project is run on top of the baseline (S0). The report states what the project adds,
 where, to which ecosystem components, and how loaded that area already is.

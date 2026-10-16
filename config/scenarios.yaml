@@ -5,6 +5,8 @@
 #                         of a decay or footprint pressure, processed with the same rules
 #   mode: replace_raster  a ready-made raster that replaces the baseline layer
 #   mode: add_raster      a ready-made raster added to the baseline layer
+# Planned-project files sit in data/interim/scenarios/development/<pressure theme>/ and use
+# the same attribute names as the baseline sources (original documents in data/raw/scenarios/).
 #
 # climate: list of {ssp, horizon}. Each entry becomes its own run named
 #   <scenario id>_<ssp>_<horizon>. Omit for present climate.
@@ -18,15 +20,15 @@ climate_futures: &climate_futures
   - {ssp: ssp585, horizon: "2100"}
 
 planned_development: &planned_development
-  - {pressure: desal_brine, mode: add_sources, file: data/raw/scenarios/development/desalination_planned.gpkg}
-  - {pressure: chemical_discharge, mode: add_sources, file: data/raw/scenarios/development/desalination_planned.gpkg}
-  - {pressure: thermal_discharge, mode: add_sources, file: data/raw/scenarios/development/thermal_planned.gpkg}
-  - {pressure: reclamation, mode: add_sources, file: data/raw/scenarios/development/reclamation_planned.gpkg}
-  - {pressure: dredging_sediment, mode: add_sources, file: data/raw/scenarios/development/dredging_planned.gpkg}
-  - {pressure: wastewater_nutrients, mode: add_sources, file: data/raw/scenarios/development/wastewater_planned.gpkg}
-  - {pressure: tourism_diving, mode: add_sources, file: data/raw/scenarios/development/tourism_planned.gpkg}
-  - {pressure: aquaculture, mode: add_sources, file: data/raw/scenarios/development/aquaculture_planned.gpkg}
-  - {pressure: light_pollution, mode: add_raster, file: data/raw/scenarios/development/light_planned.tif}
+  - {pressure: desal_brine, mode: add_sources, file: data/interim/scenarios/development/discharges/desalination_planned.gpkg}
+  - {pressure: chemical_discharge, mode: add_sources, file: data/interim/scenarios/development/discharges/desalination_planned.gpkg}
+  - {pressure: thermal_discharge, mode: add_sources, file: data/interim/scenarios/development/discharges/thermal_planned.gpkg}
+  - {pressure: reclamation, mode: add_sources, file: data/interim/scenarios/development/coastal_development/reclamation_planned.gpkg}
+  - {pressure: dredging_sediment, mode: add_sources, file: data/interim/scenarios/development/coastal_development/dredging_planned.gpkg}
+  - {pressure: wastewater_nutrients, mode: add_sources, file: data/interim/scenarios/development/discharges/wastewater_planned.gpkg}
+  - {pressure: tourism_diving, mode: add_sources, file: data/interim/scenarios/development/tourism/tourism_planned.gpkg}
+  - {pressure: aquaculture, mode: add_sources, file: data/interim/scenarios/development/fisheries_aquaculture/aquaculture_planned.gpkg}
+  - {pressure: light_pollution, mode: add_raster, file: data/interim/scenarios/development/coastal_development/light_planned.tif}
 
 scenarios:
   - id: S0_baseline
